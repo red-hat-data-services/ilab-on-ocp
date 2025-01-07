@@ -526,9 +526,6 @@ components:
     executorLabel: exec-run-mt-bench-op
     inputDefinitions:
       parameters:
-        best_score_file:
-          isOptional: true
-          parameterType: STRING
         max_workers:
           parameterType: STRING
         merge_system_user_message:
@@ -718,20 +715,18 @@ deploymentSpec:
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
           \ *\n\ndef generate_metrics_report_op(\n    metrics: Output[Metrics],\n\
-          ):\n    import ast\n    import json\n\n    with open(\"/output/mt_bench_data.json\"\
-          , \"r\") as f:\n        mt_bench_data = f.read()\n    mt_bench_data = ast.literal_eval(mt_bench_data)[0]\n\
-          \n    metrics.log_metric(\"mt_bench_best_model\", mt_bench_data[\"model\"\
-          ])\n    metrics.log_metric(\"mt_bench_best_score\", mt_bench_data[\"overall_score\"\
-          ])\n    metrics.log_metric(\"mt_bench_best_model_error_rate\", mt_bench_data[\"\
-          error_rate\"])\n\n    with open(\"/output/mt_bench_branch/mt_bench_branch_data.json\"\
-          , \"r\") as f:\n        mt_bench_branch_data = json.loads(f.read())\n\n\
-          \    metrics.log_metric(\"mt_bench_branch_score\", mt_bench_branch_data[\"\
-          overall_score\"])\n    metrics.log_metric(\n        \"mt_bench_branch_base_score\"\
-          , mt_bench_branch_data[\"base_overall_score\"]\n    )\n\n    with open(\"\
-          /output/mmlu_branch/mmlu_branch_data.json\", \"r\") as f:\n        mmlu_branch_data\
-          \ = json.loads(f.read())\n\n    metrics.log_metric(\"mmlu_branch_score\"\
-          , mmlu_branch_data[\"model_score\"])\n    metrics.log_metric(\"mmlu_branch_base_score\"\
-          , mmlu_branch_data[\"base_model_score\"])\n\n"
+          ):\n    import json\n\n    reports = {\n        \"mt_bench\": \"/output/mt_bench_data.json\"\
+          ,\n        \"mt_bench_branch\": \"/output/mt_bench_branch/mt_bench_branch_data.json\"\
+          ,\n        \"mmlu_branch\": \"/output/mmlu_branch/mmlu_branch_data.json\"\
+          ,\n    }\n\n    for report, file_name in reports.items():\n        with\
+          \ open(file_name, \"r\", encoding=\"utf-8\") as f:\n            report_data\
+          \ = json.load(f)\n\n        if report == \"mt_bench\":\n            metrics.log_metric(f\"\
+          {report}_best_model\", report_data[\"best_model\"])\n            metrics.log_metric(f\"\
+          {report}_best_score\", report_data[\"best_score\"])\n        else:\n   \
+          \         metrics.log_metric(\n                f\"{report}_trained_model_score\"\
+          , report_data[\"trained_model_score\"]\n            )\n            metrics.log_metric(\n\
+          \                f\"{report}_base_model_score\", report_data[\"base_model_score\"\
+          ]\n            )\n\n"
         image: quay.io/modh/odh-generic-data-science-notebook@sha256:0efbb3ad6f8f342360cf1f002d40716a39d4c58f69163e053d5bd19b4fe732d4
     exec-git-clone-op:
       container:
@@ -1072,13 +1067,14 @@ deploymentSpec:
           ,\n    sdg_path: str = \"/input/sdg\",\n    mmlu_branch_output_path: str\
           \ = \"/output/mmlu_branch\",\n    mt_bench_branch_output_path: str = \"\
           /output/mt_bench_branch\",\n):\n    import json\n    import os\n    import\
-          \ subprocess\n\n    import httpx\n    import torch\n    from instructlab.eval.mmlu\
-          \ import MMLUBranchEvaluator\n    from instructlab.eval.mt_bench import\
-          \ MTBenchBranchEvaluator\n    from instructlab.model.evaluate import qa_pairs_to_qna_to_avg_scores,\
-          \ sort_score\n\n    judge_api_key = os.getenv(\"JUDGE_API_KEY\", \"\")\n\
-          \    judge_model_name = os.getenv(\"JUDGE_NAME\")\n    judge_endpoint =\
-          \ os.getenv(\"JUDGE_ENDPOINT\")\n    judge_ca_cert_path = os.getenv(\"JUDGE_CA_CERT_PATH\"\
-          )\n    use_tls = os.path.exists(judge_ca_cert_path) and (\n        os.path.getsize(judge_ca_cert_path)\
+          \ subprocess\n    from pathlib import Path\n\n    import httpx\n    import\
+          \ torch\n    from instructlab.eval.mmlu import MMLUBranchEvaluator\n   \
+          \ from instructlab.eval.mt_bench import MTBenchBranchEvaluator\n    from\
+          \ instructlab.model.evaluate import qa_pairs_to_qna_to_avg_scores, sort_score\n\
+          \n    judge_api_key = os.getenv(\"JUDGE_API_KEY\", \"\")\n    judge_model_name\
+          \ = os.getenv(\"JUDGE_NAME\")\n    judge_endpoint = os.getenv(\"JUDGE_ENDPOINT\"\
+          )\n    judge_ca_cert_path = os.getenv(\"JUDGE_CA_CERT_PATH\")\n    use_tls\
+          \ = os.path.exists(judge_ca_cert_path) and (\n        os.path.getsize(judge_ca_cert_path)\
           \ > 0\n    )\n    judge_http_client = httpx.Client(verify=judge_ca_cert_path)\
           \ if use_tls else None\n\n    print(\"Starting Final Eval...\")\n\n    def\
           \ launch_vllm(\n        model_path: str, gpu_count: int, retries: int =\
@@ -1219,14 +1215,15 @@ deploymentSpec:
           \            regressions,\n            no_changes,\n        )\n\n      \
           \  mmlu_branch_data = {\n            \"report_title\": \"KNOWLEDGE EVALUATION\
           \ REPORT\",\n            \"max_score\": \"1.0\",\n            \"model\"\
-          : candidate_model,\n            \"model_score\": round(overall_score, 2),\n\
-          \            \"base_model\": base_model_dir,\n            \"base_model_score\"\
+          : candidate_model,\n            \"trained_model_score\": round(overall_score,\
+          \ 2),\n            \"base_model\": base_model_dir,\n            \"base_model_score\"\
           : round(base_overall_score, 2),\n            \"summary\": summary,\n   \
           \     }\n\n        if not os.path.exists(mmlu_branch_output_path):\n   \
-          \         os.makedirs(mmlu_branch_output_path)\n        with open(\n   \
-          \         f\"{mmlu_branch_output_path}/mmlu_branch_data.json\", \"w\", encoding=\"\
-          utf-8\"\n        ) as f:\n            json.dump(mmlu_branch_data, f, indent=4)\n\
-          \n    else:\n        print(\"No MMLU tasks directories found, skipping MMLU_branch\
+          \         os.makedirs(mmlu_branch_output_path)\n        mmlu_branch_output_file\
+          \ = (\n            Path(mmlu_branch_output_path) / \"mmlu_branch_data.json\"\
+          \n        )\n        with open(mmlu_branch_output_file, \"w\", encoding=\"\
+          utf-8\") as f:\n            json.dump(mmlu_branch_data, f, indent=4)\n \
+          \   else:\n        print(\"No MMLU tasks directories found, skipping MMLU_branch\
           \ evaluation.\")\n\n    # MT_BENCH_BRANCH\n\n    print(\"Starting MT_BENCH_BRANCH\
           \ ...\")\n\n    judge_api_key = os.getenv(\"JUDGE_API_KEY\", \"\")\n   \
           \ judge_model_name = os.getenv(\"JUDGE_NAME\")\n    judge_endpoint = os.getenv(\"\
@@ -1290,12 +1287,13 @@ deploymentSpec:
           \    new_qnas,\n    )\n\n    mt_bench_branch_data = {\n        \"report_title\"\
           : \"SKILLS EVALUATION REPORT\",\n        \"model\": candidate_model,\n \
           \       \"judge_model\": judge_model_name,\n        \"max_score\": \"10.0\"\
-          ,\n        \"overall_score\": overall_score,\n        \"base_overall_score\"\
+          ,\n        \"trained_model_score\": overall_score,\n        \"base_model_score\"\
           : base_overall_score,\n        \"error_rate\": error_rate,\n        \"summary\"\
           : summary,\n    }\n\n    if not os.path.exists(mt_bench_branch_output_path):\n\
-          \        os.makedirs(mt_bench_branch_output_path)\n    with open(\n    \
-          \    f\"{mt_bench_branch_output_path}/mt_bench_branch_data.json\",\n   \
-          \     \"w\",\n        encoding=\"utf-8\",\n    ) as f:\n        json.dump(mt_bench_branch_data,\
+          \        os.makedirs(mt_bench_branch_output_path)\n    mt_bench_branch_data_file\
+          \ = (\n        Path(mt_bench_branch_output_path) / \"mt_bench_branch_data.json\"\
+          \n    )\n    with open(\n        mt_bench_branch_data_file,\n        \"\
+          w\",\n        encoding=\"utf-8\",\n    ) as f:\n        json.dump(mt_bench_branch_data,\
           \ f, indent=4)\n\n"
         env:
         - name: HOME
@@ -1333,23 +1331,23 @@ deploymentSpec:
           \  - 'auto'\n    # with 'auto', number of gpus allocated for serving is\
           \ calculated based on environment\n    # https://github.com/instructlab/eval/blob/main/src/instructlab/eval/mt_bench.py#L36\n\
           \    max_workers: str,\n    models_folder: str,\n    output_path: str =\
-          \ \"/output/mt_bench_data.json\",\n    best_score_file: Optional[str] =\
-          \ None,\n) -> NamedTuple(\"outputs\", best_model=str, best_score=float):\n\
-          \    import json\n    import os\n    import subprocess\n\n    import httpx\n\
-          \    import torch\n    from instructlab.eval.mt_bench import MTBenchEvaluator\n\
-          \n    judge_api_key = os.getenv(\"JUDGE_API_KEY\", \"\")\n    judge_model_name\
-          \ = os.getenv(\"JUDGE_NAME\")\n    judge_endpoint = os.getenv(\"JUDGE_ENDPOINT\"\
-          )\n    judge_ca_cert_path = os.getenv(\"JUDGE_CA_CERT_PATH\")\n    use_tls\
-          \ = os.path.exists(judge_ca_cert_path) and (\n        os.path.getsize(judge_ca_cert_path)\
-          \ > 0\n    )\n    judge_http_client = httpx.Client(verify=judge_ca_cert_path)\
-          \ if use_tls else None\n\n    def launch_vllm(\n        model_path: str,\
-          \ gpu_count: int, retries: int = 120, delay: int = 10\n    ) -> tuple:\n\
-          \        import subprocess\n        import sys\n        import time\n\n\
-          \        import requests\n        from instructlab.model.backends.common\
-          \ import free_tcp_ipv4_port\n\n        free_port = free_tcp_ipv4_port(\"\
-          127.0.0.1\")\n        port = str(free_port)\n        vllm_server = f\"http://127.0.0.1:{port}/v1\"\
-          \n\n        command = [\n            sys.executable,\n            \"-m\"\
-          ,\n            \"vllm.entrypoints.openai.api_server\",\n            \"--port\"\
+          \ \"/output/mt_bench_data.json\",\n) -> NamedTuple(\"outputs\", best_model=str,\
+          \ best_score=float):\n    import json\n    import os\n    import subprocess\n\
+          \n    import httpx\n    import torch\n    from instructlab.eval.mt_bench\
+          \ import MTBenchEvaluator\n\n    judge_api_key = os.getenv(\"JUDGE_API_KEY\"\
+          , \"\")\n    judge_model_name = os.getenv(\"JUDGE_NAME\")\n    judge_endpoint\
+          \ = os.getenv(\"JUDGE_ENDPOINT\")\n    judge_ca_cert_path = os.getenv(\"\
+          JUDGE_CA_CERT_PATH\")\n    use_tls = os.path.exists(judge_ca_cert_path)\
+          \ and (\n        os.path.getsize(judge_ca_cert_path) > 0\n    )\n    judge_http_client\
+          \ = httpx.Client(verify=judge_ca_cert_path) if use_tls else None\n\n   \
+          \ def launch_vllm(\n        model_path: str, gpu_count: int, retries: int\
+          \ = 120, delay: int = 10\n    ) -> tuple:\n        import subprocess\n \
+          \       import sys\n        import time\n\n        import requests\n   \
+          \     from instructlab.model.backends.common import free_tcp_ipv4_port\n\
+          \n        free_port = free_tcp_ipv4_port(\"127.0.0.1\")\n        port =\
+          \ str(free_port)\n        vllm_server = f\"http://127.0.0.1:{port}/v1\"\n\
+          \n        command = [\n            sys.executable,\n            \"-m\",\n\
+          \            \"vllm.entrypoints.openai.api_server\",\n            \"--port\"\
           ,\n            port,\n            \"--model\",\n            model_path,\n\
           \        ]\n        if gpu_count > 0:\n            command += [\n      \
           \          \"--tensor-parallel-size\",\n                str(gpu_count),\n\
@@ -1413,17 +1411,17 @@ deploymentSpec:
           \            \"overall_score\": overall_score,\n            \"turn_scores\"\
           : turn_scores,\n            \"qa_scores\": qa_pairs,\n            \"error_rate\"\
           : error_rate,\n        }\n\n        all_mt_bench_data.append(mt_bench_data)\n\
-          \        scores[model_path] = overall_score\n\n    with open(output_path,\
-          \ \"w\", encoding=\"utf-8\") as f:\n        json.dump(all_mt_bench_data,\
-          \ f, indent=4)\n\n    outputs = NamedTuple(\"outputs\", best_model=str,\
-          \ best_score=float)\n    best_model = max(scores, key=scores.get)\n    best_score\
-          \ = scores[best_model]\n    if best_score_file:\n        with open(best_score_file,\
-          \ \"w\", encoding=\"utf-8\") as f:\n            json.dump({\"best_model\"\
-          : best_model, \"best_score\": best_score}, f, indent=4)\n\n    # Rename\
-          \ the best model directory to \"candidate_model\" for the next step\n  \
-          \  # So we know which model to use for the final evaluation\n    if os.path.exists(os.path.join(models_folder,\
-          \ \"candidate_model\")):\n        print(\"candidate_model already exists.\
-          \ Skipping renaming\")\n    else:\n        os.rename(\n            os.path.join(models_folder,\
+          \        scores[model_path] = overall_score\n\n    outputs = NamedTuple(\"\
+          outputs\", best_model=str, best_score=float)\n    best_model = max(scores,\
+          \ key=scores.get)\n    best_score = scores[best_model]\n    mt_bench_report\
+          \ = {\n        \"best_model\": best_model,\n        \"best_score\": best_score,\n\
+          \        \"reports\": all_mt_bench_data,\n    }\n\n    with open(output_path,\
+          \ \"w\", encoding=\"utf-8\") as f:\n        json.dump(mt_bench_report, f,\
+          \ indent=4)\n\n    # Rename the best model directory to \"candidate_model\"\
+          \ for the next step\n    # So we know which model to use for the final evaluation\n\
+          \    if os.path.exists(os.path.join(models_folder, \"candidate_model\")):\n\
+          \        print(\"candidate_model already exists. Skipping renaming\")\n\
+          \    else:\n        os.rename(\n            os.path.join(models_folder,\
           \ best_model),\n            os.path.join(models_folder, \"candidate_model\"\
           ),\n        )\n\n    return outputs(best_model=best_model, best_score=best_score)\n\
           \n"

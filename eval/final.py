@@ -24,6 +24,7 @@ def run_final_eval_op(
     import json
     import os
     import subprocess
+    from pathlib import Path
 
     import httpx
     import torch
@@ -320,7 +321,7 @@ def run_final_eval_op(
             "report_title": "KNOWLEDGE EVALUATION REPORT",
             "max_score": "1.0",
             "model": candidate_model,
-            "model_score": round(overall_score, 2),
+            "trained_model_score": round(overall_score, 2),
             "base_model": base_model_dir,
             "base_model_score": round(base_overall_score, 2),
             "summary": summary,
@@ -328,11 +329,11 @@ def run_final_eval_op(
 
         if not os.path.exists(mmlu_branch_output_path):
             os.makedirs(mmlu_branch_output_path)
-        with open(
-            f"{mmlu_branch_output_path}/mmlu_branch_data.json", "w", encoding="utf-8"
-        ) as f:
+        mmlu_branch_output_file = (
+            Path(mmlu_branch_output_path) / "mmlu_branch_data.json"
+        )
+        with open(mmlu_branch_output_file, "w", encoding="utf-8") as f:
             json.dump(mmlu_branch_data, f, indent=4)
-
     else:
         print("No MMLU tasks directories found, skipping MMLU_branch evaluation.")
 
@@ -469,16 +470,19 @@ def run_final_eval_op(
         "model": candidate_model,
         "judge_model": judge_model_name,
         "max_score": "10.0",
-        "overall_score": overall_score,
-        "base_overall_score": base_overall_score,
+        "trained_model_score": overall_score,
+        "base_model_score": base_overall_score,
         "error_rate": error_rate,
         "summary": summary,
     }
 
     if not os.path.exists(mt_bench_branch_output_path):
         os.makedirs(mt_bench_branch_output_path)
+    mt_bench_branch_data_file = (
+        Path(mt_bench_branch_output_path) / "mt_bench_branch_data.json"
+    )
     with open(
-        f"{mt_bench_branch_output_path}/mt_bench_branch_data.json",
+        mt_bench_branch_data_file,
         "w",
         encoding="utf-8",
     ) as f:
@@ -489,27 +493,25 @@ def run_final_eval_op(
 def generate_metrics_report_op(
     metrics: Output[Metrics],
 ):
-    import ast
     import json
 
-    with open("/output/mt_bench_data.json", "r") as f:
-        mt_bench_data = f.read()
-    mt_bench_data = ast.literal_eval(mt_bench_data)[0]
+    reports = {
+        "mt_bench": "/output/mt_bench_data.json",
+        "mt_bench_branch": "/output/mt_bench_branch/mt_bench_branch_data.json",
+        "mmlu_branch": "/output/mmlu_branch/mmlu_branch_data.json",
+    }
 
-    metrics.log_metric("mt_bench_best_model", mt_bench_data["model"])
-    metrics.log_metric("mt_bench_best_score", mt_bench_data["overall_score"])
-    metrics.log_metric("mt_bench_best_model_error_rate", mt_bench_data["error_rate"])
+    for report, file_name in reports.items():
+        with open(file_name, "r", encoding="utf-8") as f:
+            report_data = json.load(f)
 
-    with open("/output/mt_bench_branch/mt_bench_branch_data.json", "r") as f:
-        mt_bench_branch_data = json.loads(f.read())
-
-    metrics.log_metric("mt_bench_branch_score", mt_bench_branch_data["overall_score"])
-    metrics.log_metric(
-        "mt_bench_branch_base_score", mt_bench_branch_data["base_overall_score"]
-    )
-
-    with open("/output/mmlu_branch/mmlu_branch_data.json", "r") as f:
-        mmlu_branch_data = json.loads(f.read())
-
-    metrics.log_metric("mmlu_branch_score", mmlu_branch_data["model_score"])
-    metrics.log_metric("mmlu_branch_base_score", mmlu_branch_data["base_model_score"])
+        if report == "mt_bench":
+            metrics.log_metric(f"{report}_best_model", report_data["best_model"])
+            metrics.log_metric(f"{report}_best_score", report_data["best_score"])
+        else:
+            metrics.log_metric(
+                f"{report}_trained_model_score", report_data["trained_model_score"]
+            )
+            metrics.log_metric(
+                f"{report}_base_model_score", report_data["base_model_score"]
+            )
