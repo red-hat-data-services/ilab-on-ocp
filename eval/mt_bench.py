@@ -1,5 +1,6 @@
 # type: ignore
-# pylint: disable=no-value-for-parameter,import-outside-toplevel,import-error
+# pylint: disable=import-outside-toplevel,import-error
+
 from typing import NamedTuple, Optional
 
 from kfp.dsl import component

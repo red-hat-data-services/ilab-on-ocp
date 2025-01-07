@@ -1,5 +1,5 @@
 # type: ignore
-# pylint: disable=no-value-for-parameter,import-outside-toplevel,import-error
+# pylint: disable=import-outside-toplevel,import-error
 
 from kfp.dsl import Artifact, Output, component
 

@@ -1,5 +1,5 @@
 # type: ignore
-# pylint: disable=import-outside-toplevel,missing-function-docstring
+# pylint: disable=import-outside-toplevel,import-error
 
 from typing import Optional
 
