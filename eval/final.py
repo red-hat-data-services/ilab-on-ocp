@@ -1,7 +1,7 @@
 # type: ignore
 # pylint: disable=import-outside-toplevel,import-error
 
-from kfp.dsl import Artifact, Input, Metrics, Output, component
+from kfp.dsl import Metrics, Output, component
 
 from utils.consts import PYTHON_IMAGE, RHELAI_IMAGE
 

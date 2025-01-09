@@ -17,7 +17,7 @@ from kfp.kubernetes import (
     use_secret_as_volume,
 )
 
-from eval import run_final_eval_op, run_mt_bench_op, generate_metrics_report_op
+from eval import generate_metrics_report_op, run_final_eval_op, run_mt_bench_op
 from sdg import (
     git_clone_op,
     sdg_op,
@@ -33,7 +33,9 @@ from training import (
 from utils import (
     ilab_importer_op,
     model_to_pvc_op,
+    pvc_to_mmlu_branch_op,
     pvc_to_model_op,
+    pvc_to_mt_bench_branch_op,
     pvc_to_mt_bench_op,
 )
 from utils.consts import RHELAI_IMAGE
@@ -58,13 +60,11 @@ JUDGE_CA_CERT_ENV_VAR_NAME = "JUDGE_CA_CERT_PATH"
 JUDGE_CA_CERT_PATH = "/tmp/cert"
 
 
-
 @dsl.pipeline(
     display_name="InstructLab",
     name="instructlab",
     description="InstructLab pipeline",
 )
-
 def ilab_pipeline(
     # SDG phase
     sdg_repo_url: str = "https://github.com/instructlab/taxonomy.git",
@@ -426,6 +426,30 @@ def ilab_pipeline(
         mount_path="/output",
     )
 
+    output_mt_bench_branch_task = pvc_to_mt_bench_branch_op(
+        pvc_path="/output/mt_bench_branch/mt_bench_branch_data.json",
+    )
+    output_mt_bench_branch_task.after(final_eval_task)
+    output_mt_bench_branch_task.set_caching_options(False)
+
+    mount_pvc(
+        task=output_mt_bench_branch_task,
+        pvc_name=output_pvc_task.output,
+        mount_path="/output",
+    )
+
+    output_mmlu_branch_task = pvc_to_mmlu_branch_op(
+        pvc_path="/output/mmlu_branch/mmlu_branch_data.json",
+    )
+    output_mmlu_branch_task.after(final_eval_task)
+    output_mmlu_branch_task.set_caching_options(False)
+
+    mount_pvc(
+        task=output_mmlu_branch_task,
+        pvc_name=output_pvc_task.output,
+        mount_path="/output",
+    )
+
     sdg_pvc_delete_task = DeletePVC(pvc_name=sdg_input_pvc_task.output)
     sdg_pvc_delete_task.after(final_eval_task)
 
@@ -433,20 +457,23 @@ def ilab_pipeline(
     model_pvc_delete_task.after(final_eval_task)
 
     generate_metrics_report_task = generate_metrics_report_op()
-    generate_metrics_report_task.after(output_mt_bench_task, final_eval_task)
+    generate_metrics_report_task.after(final_eval_task)
     generate_metrics_report_task.set_caching_options(False)
     mount_pvc(
         task=generate_metrics_report_task,
         pvc_name=output_pvc_task.output,
         mount_path="/output",
     )
-    
+
     output_pvc_delete_task = DeletePVC(pvc_name=output_pvc_task.output)
     output_pvc_delete_task.after(
         output_model_task,
-        output_mt_bench_task, final_eval_task
+        output_mt_bench_task,
+        output_mmlu_branch_task,
+        output_mt_bench_branch_task,
+        generate_metrics_report_task,
     )
-    
+
     return
 
 

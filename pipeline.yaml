@@ -329,6 +329,18 @@ components:
           defaultValue: /model
           isOptional: true
           parameterType: STRING
+  comp-pvc-to-mmlu-branch-op:
+    executorLabel: exec-pvc-to-mmlu-branch-op
+    inputDefinitions:
+      parameters:
+        pvc_path:
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        mmlu_branch_output:
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
   comp-pvc-to-model-op:
     executorLabel: exec-pvc-to-model-op
     inputDefinitions:
@@ -340,6 +352,18 @@ components:
         model:
           artifactType:
             schemaTitle: system.Model
+            schemaVersion: 0.0.1
+  comp-pvc-to-mt-bench-branch-op:
+    executorLabel: exec-pvc-to-mt-bench-branch-op
+    inputDefinitions:
+      parameters:
+        pvc_path:
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        mt_bench_branch_output:
+          artifactType:
+            schemaTitle: system.Artifact
             schemaVersion: 0.0.1
   comp-pvc-to-mt-bench-op:
     executorLabel: exec-pvc-to-mt-bench-op
@@ -727,7 +751,7 @@ deploymentSpec:
           , report_data[\"trained_model_score\"]\n            )\n            metrics.log_metric(\n\
           \                f\"{report}_base_model_score\", report_data[\"base_model_score\"\
           ]\n            )\n\n"
-        image: quay.io/modh/odh-generic-data-science-notebook@sha256:0efbb3ad6f8f342360cf1f002d40716a39d4c58f69163e053d5bd19b4fe732d4
+        image: quay.io/modh/odh-generic-data-science-notebook@sha256:72c1d095adbda216a1f1b4b6935e3e2c717cbc58964009464ccd36c0b98312b2
     exec-git-clone-op:
       container:
         args:
@@ -765,10 +789,26 @@ deploymentSpec:
         - /bin/sh
         - -c
         image: registry.redhat.io/ubi9/toolbox@sha256:da31dee8904a535d12689346e65e5b00d11a6179abf1fa69b548dbd755fa2770
+    exec-pvc-to-mmlu-branch-op:
+      container:
+        args:
+        - cp -r {{$.inputs.parameters['pvc_path']}} {{$.outputs.artifacts['mmlu_branch_output'].path}}
+        command:
+        - /bin/sh
+        - -c
+        image: registry.redhat.io/ubi9/toolbox@sha256:da31dee8904a535d12689346e65e5b00d11a6179abf1fa69b548dbd755fa2770
     exec-pvc-to-model-op:
       container:
         args:
         - cp -r {{$.inputs.parameters['pvc_path']}} {{$.outputs.artifacts['model'].path}}
+        command:
+        - /bin/sh
+        - -c
+        image: registry.redhat.io/ubi9/toolbox@sha256:da31dee8904a535d12689346e65e5b00d11a6179abf1fa69b548dbd755fa2770
+    exec-pvc-to-mt-bench-branch-op:
+      container:
+        args:
+        - cp -r {{$.inputs.parameters['pvc_path']}} {{$.outputs.artifacts['mt_bench_branch_output'].path}}
         command:
         - /bin/sh
         - -c
@@ -1700,9 +1740,11 @@ root:
           name: comp-deletepvc-3
         dependentTasks:
         - createpvc-3
+        - generate-metrics-report-op
+        - pvc-to-mmlu-branch-op
         - pvc-to-model-op
+        - pvc-to-mt-bench-branch-op
         - pvc-to-mt-bench-op
-        - run-final-eval-op
         inputs:
           parameters:
             pvc_name:
@@ -1717,7 +1759,6 @@ root:
           name: comp-generate-metrics-report-op
         dependentTasks:
         - createpvc-3
-        - pvc-to-mt-bench-op
         - run-final-eval-op
         taskInfo:
           name: generate-metrics-report-op
@@ -1772,6 +1813,20 @@ root:
                 producerTask: importer
         taskInfo:
           name: model-to-pvc-op
+      pvc-to-mmlu-branch-op:
+        cachingOptions: {}
+        componentRef:
+          name: comp-pvc-to-mmlu-branch-op
+        dependentTasks:
+        - createpvc-3
+        - run-final-eval-op
+        inputs:
+          parameters:
+            pvc_path:
+              runtimeValue:
+                constant: /output/mmlu_branch/mmlu_branch_data.json
+        taskInfo:
+          name: pvc-to-mmlu-branch-op
       pvc-to-model-op:
         cachingOptions: {}
         componentRef:
@@ -1786,6 +1841,20 @@ root:
                 constant: /output/phase_2/model/hf_format/candidate_model
         taskInfo:
           name: pvc-to-model-op
+      pvc-to-mt-bench-branch-op:
+        cachingOptions: {}
+        componentRef:
+          name: comp-pvc-to-mt-bench-branch-op
+        dependentTasks:
+        - createpvc-3
+        - run-final-eval-op
+        inputs:
+          parameters:
+            pvc_path:
+              runtimeValue:
+                constant: /output/mt_bench_branch/mt_bench_branch_data.json
+        taskInfo:
+          name: pvc-to-mt-bench-branch-op
       pvc-to-mt-bench-op:
         cachingOptions: {}
         componentRef:
@@ -2226,7 +2295,19 @@ platforms:
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc-2
+        exec-pvc-to-mmlu-branch-op:
+          pvcMount:
+          - mountPath: /output
+            taskOutputParameter:
+              outputParameterKey: name
+              producerTask: createpvc-3
         exec-pvc-to-model-op:
+          pvcMount:
+          - mountPath: /output
+            taskOutputParameter:
+              outputParameterKey: name
+              producerTask: createpvc-3
+        exec-pvc-to-mt-bench-branch-op:
           pvcMount:
           - mountPath: /output
             taskOutputParameter:
