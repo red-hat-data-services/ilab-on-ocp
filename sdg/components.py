@@ -1,5 +1,5 @@
 # type: ignore
-# pylint: disable=no-value-for-parameter,import-outside-toplevel,import-error,no-member
+# pylint: disable=import-outside-toplevel,import-error
 from typing import Optional
 
 from kfp import dsl
@@ -38,17 +38,19 @@ def sdg_op(
     sdg_sampling_size: float = 1.0,
 ):
     import os
-    from os import getenv, path
+    import shutil
+    import tempfile
 
     import instructlab.sdg
     import openai
+    import xdg_base_dirs
     import yaml
 
-    api_key = getenv("api_key")
-    model = getenv("model")
-    endpoint = getenv("endpoint")
+    api_key = os.getenv("api_key")
+    model = os.getenv("model")
+    endpoint = os.getenv("endpoint")
 
-    sdg_ca_cert_path = getenv("SDG_CA_CERT_PATH")
+    sdg_ca_cert_path = os.getenv("SDG_CA_CERT_PATH")
     use_tls = os.path.exists(sdg_ca_cert_path) and (
         os.path.getsize(sdg_ca_cert_path) > 0
     )
@@ -94,7 +96,7 @@ def sdg_op(
         skills_recipe = "/usr/share/instructlab/sdg/default_data_recipes/skills.yaml"
 
         def set_precomputed_skills_data_ratio(sampling_size: float, skills_recipe: str):
-            if path.exists(skills_recipe):
+            if os.path.exists(skills_recipe):
                 with open(skills_recipe, "r", encoding="utf-8") as file:
                     skills_yaml = yaml.load(file, Loader=yaml.Loader)
 
@@ -110,16 +112,11 @@ def sdg_op(
         except PermissionError:
             print("Failed to set precomputed skills data ratio: Permission denied")
             print("Attempting to move default data recipes to temporary directory")
-            import os
-            import shutil
-            import tempfile
-
-            import xdg_base_dirs
 
             # Create a temporary directory
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Create a default_data_recipes directory
-                temp_dir = path.join(temp_dir, "default_data_recipes")
+                temp_dir = os.path.join(temp_dir, "default_data_recipes")
                 os.mkdir(temp_dir)
 
                 # Copy default_data_recipes/skills.yaml to the temporary directory
@@ -132,7 +129,7 @@ def sdg_op(
                     os.path.join(str(dir), "instructlab", "sdg")
                     for dir in xdg_base_dirs.xdg_data_dirs()
                 ]
-                temp_pipeline_dir = path.join(temp_dir, "pipeline")
+                temp_pipeline_dir = os.path.join(temp_dir, "pipeline")
                 os.mkdir(temp_pipeline_dir)
                 for d in data_dirs:
                     pipeline_path = os.path.join(d, "pipelines", pipeline)
@@ -145,7 +142,7 @@ def sdg_op(
                         break
 
                 # Build new skills.yaml path
-                new_skills_recipe = path.join(temp_dir, "skills.yaml")
+                new_skills_recipe = os.path.join(temp_dir, "skills.yaml")
                 print(f"New skills recipe path: {new_skills_recipe}")
 
                 # Override XDG_DATA_DIRS with the temporary directory

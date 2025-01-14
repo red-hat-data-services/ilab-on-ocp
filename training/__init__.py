@@ -1,4 +1,3 @@
-from . import faked
 from .components import (
     data_processing_op,
     knowledge_processed_data_to_artifact_op,
@@ -11,5 +10,4 @@ __all__ = [
     "pytorchjob_manifest_op",
     "skills_processed_data_to_artifact_op",
     "knowledge_processed_data_to_artifact_op",
-    "faked",
 ]
