@@ -648,7 +648,7 @@ deploymentSpec:
         env:
         - name: XDG_CACHE_HOME
           value: /tmp
-        image: registry.stage.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.3.1
+        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:b3dc9af0244aa6b84e6c3ef53e714a316daaefaae67e28de397cd71ee4b2ac7e
     exec-deletepvc:
       container:
         image: argostub/deletepvc
@@ -671,7 +671,7 @@ deploymentSpec:
         command:
         - /bin/sh
         - -c
-        image: registry.access.redhat.com/ubi9/toolbox
+        image: registry.redhat.io/ubi9/toolbox@sha256:da31dee8904a535d12689346e65e5b00d11a6179abf1fa69b548dbd755fa2770
     exec-importer:
       importer:
         artifactUri:
@@ -686,7 +686,7 @@ deploymentSpec:
         command:
         - /bin/sh
         - -c
-        image: registry.access.redhat.com/ubi9/toolbox
+        image: registry.redhat.io/ubi9/toolbox@sha256:da31dee8904a535d12689346e65e5b00d11a6179abf1fa69b548dbd755fa2770
     exec-model-to-pvc-op:
       container:
         args:
@@ -694,7 +694,7 @@ deploymentSpec:
         command:
         - /bin/sh
         - -c
-        image: registry.access.redhat.com/ubi9/toolbox
+        image: registry.redhat.io/ubi9/toolbox@sha256:da31dee8904a535d12689346e65e5b00d11a6179abf1fa69b548dbd755fa2770
     exec-pvc-to-model-op:
       container:
         args:
@@ -702,7 +702,7 @@ deploymentSpec:
         command:
         - /bin/sh
         - -c
-        image: registry.access.redhat.com/ubi9/toolbox
+        image: registry.redhat.io/ubi9/toolbox@sha256:da31dee8904a535d12689346e65e5b00d11a6179abf1fa69b548dbd755fa2770
     exec-pvc-to-mt-bench-op:
       container:
         args:
@@ -710,7 +710,7 @@ deploymentSpec:
         command:
         - /bin/sh
         - -c
-        image: registry.access.redhat.com/ubi9/toolbox
+        image: registry.redhat.io/ubi9/toolbox@sha256:da31dee8904a535d12689346e65e5b00d11a6179abf1fa69b548dbd755fa2770
     exec-pytorchjob-manifest-op:
       container:
         args:
@@ -914,7 +914,7 @@ deploymentSpec:
           \ as e:\n            print(f\"Connection broken reconnecting the watcher\
           \ {str(e)}\")\n            time.sleep(5)  # Backoff before retrying\n  \
           \      finally:\n            w.stop()\n\n"
-        image: quay.io/modh/odh-generic-data-science-notebook:v3-2024b-20241111
+        image: quay.io/modh/odh-generic-data-science-notebook@sha256:0efbb3ad6f8f342360cf1f002d40716a39d4c58f69163e053d5bd19b4fe732d4
     exec-pytorchjob-manifest-op-2:
       container:
         args:
@@ -1118,7 +1118,7 @@ deploymentSpec:
           \ as e:\n            print(f\"Connection broken reconnecting the watcher\
           \ {str(e)}\")\n            time.sleep(5)  # Backoff before retrying\n  \
           \      finally:\n            w.stop()\n\n"
-        image: quay.io/modh/odh-generic-data-science-notebook:v3-2024b-20241111
+        image: quay.io/modh/odh-generic-data-science-notebook@sha256:0efbb3ad6f8f342360cf1f002d40716a39d4c58f69163e053d5bd19b4fe732d4
     exec-run-final-eval-op:
       container:
         args:
@@ -1371,7 +1371,7 @@ deploymentSpec:
           value: /tmp
         - name: JUDGE_CA_CERT_PATH
           value: /tmp/cert/ca.crt
-        image: registry.stage.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.3.1
+        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:b3dc9af0244aa6b84e6c3ef53e714a316daaefaae67e28de397cd71ee4b2ac7e
         resources:
           accelerator:
             count: '1'
@@ -1501,7 +1501,7 @@ deploymentSpec:
           value: /tmp
         - name: JUDGE_CA_CERT_PATH
           value: /tmp/cert/ca.crt
-        image: registry.stage.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.3.1
+        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:b3dc9af0244aa6b84e6c3ef53e714a316daaefaae67e28de397cd71ee4b2ac7e
         resources:
           accelerator:
             count: '1'
@@ -1615,7 +1615,7 @@ deploymentSpec:
           value: /tmp
         - name: SDG_CA_CERT_PATH
           value: /tmp/cert/ca.crt
-        image: registry.stage.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.3.1
+        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:b3dc9af0244aa6b84e6c3ef53e714a316daaefaae67e28de397cd71ee4b2ac7e
     exec-sdg-to-artifact-op:
       container:
         args:
@@ -1623,7 +1623,7 @@ deploymentSpec:
         command:
         - /bin/sh
         - -c
-        image: registry.access.redhat.com/ubi9/toolbox
+        image: registry.redhat.io/ubi9/toolbox@sha256:da31dee8904a535d12689346e65e5b00d11a6179abf1fa69b548dbd755fa2770
     exec-skills-processed-data-to-artifact-op:
       container:
         args:
@@ -1631,7 +1631,7 @@ deploymentSpec:
         command:
         - /bin/sh
         - -c
-        image: registry.access.redhat.com/ubi9/toolbox
+        image: registry.redhat.io/ubi9/toolbox@sha256:da31dee8904a535d12689346e65e5b00d11a6179abf1fa69b548dbd755fa2770
     exec-taxonomy-to-artifact-op:
       container:
         args:
@@ -1639,7 +1639,7 @@ deploymentSpec:
         command:
         - /bin/sh
         - -c
-        image: registry.access.redhat.com/ubi9/toolbox
+        image: registry.redhat.io/ubi9/toolbox@sha256:da31dee8904a535d12689346e65e5b00d11a6179abf1fa69b548dbd755fa2770
 pipelineInfo:
   description: InstructLab pipeline
   displayName: InstructLab
