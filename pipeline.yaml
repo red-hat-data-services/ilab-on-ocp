@@ -648,7 +648,7 @@ deploymentSpec:
         env:
         - name: XDG_CACHE_HOME
           value: /tmp
-        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:b3dc9af0244aa6b84e6c3ef53e714a316daaefaae67e28de397cd71ee4b2ac7e
+        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:05cfba1fb13ed54b1de4d021da2a31dd78ba7d8cc48e10c7fe372815899a18ae
     exec-deletepvc:
       container:
         image: argostub/deletepvc
@@ -1371,7 +1371,7 @@ deploymentSpec:
           value: /tmp
         - name: JUDGE_CA_CERT_PATH
           value: /tmp/cert/ca.crt
-        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:b3dc9af0244aa6b84e6c3ef53e714a316daaefaae67e28de397cd71ee4b2ac7e
+        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:05cfba1fb13ed54b1de4d021da2a31dd78ba7d8cc48e10c7fe372815899a18ae
         resources:
           accelerator:
             count: '1'
@@ -1501,7 +1501,7 @@ deploymentSpec:
           value: /tmp
         - name: JUDGE_CA_CERT_PATH
           value: /tmp/cert/ca.crt
-        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:b3dc9af0244aa6b84e6c3ef53e714a316daaefaae67e28de397cd71ee4b2ac7e
+        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:05cfba1fb13ed54b1de4d021da2a31dd78ba7d8cc48e10c7fe372815899a18ae
         resources:
           accelerator:
             count: '1'
@@ -1615,7 +1615,7 @@ deploymentSpec:
           value: /tmp
         - name: SDG_CA_CERT_PATH
           value: /tmp/cert/ca.crt
-        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:b3dc9af0244aa6b84e6c3ef53e714a316daaefaae67e28de397cd71ee4b2ac7e
+        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:05cfba1fb13ed54b1de4d021da2a31dd78ba7d8cc48e10c7fe372815899a18ae
     exec-sdg-to-artifact-op:
       container:
         args:
