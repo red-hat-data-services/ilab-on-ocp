@@ -1132,20 +1132,27 @@ def sdg_op(
     sdg_path: str = "/data/sdg",
     sdg_sampling_size: float = 1.0,
 ):
-    from os import getenv, path
+    import os
+    import shutil
+    import tempfile
 
     import instructlab.sdg
     import openai
+    import xdg_base_dirs
     import yaml
 
-    api_key = getenv("api_key")
-    model = getenv("model")
-    endpoint = getenv("endpoint")
+    api_key = os.getenv("api_key")
+    model = os.getenv("model")
+    endpoint = os.getenv("endpoint")
 
-    if sdg_ca_cert := getenv("SDG_CA_CERT_PATH"):
+    sdg_ca_cert_path = os.getenv("SDG_CA_CERT_PATH")
+    use_tls = os.path.exists(sdg_ca_cert_path) and (
+        os.path.getsize(sdg_ca_cert_path) > 0
+    )
+    if use_tls:
         import httpx
 
-        custom_http_client = httpx.Client(verify=sdg_ca_cert)
+        custom_http_client = httpx.Client(verify=sdg_ca_cert_path)
         client = openai.OpenAI(
             base_url=endpoint, api_key=api_key, http_client=custom_http_client
         )
@@ -1184,7 +1191,7 @@ def sdg_op(
         skills_recipe = "/usr/share/instructlab/sdg/default_data_recipes/skills.yaml"
 
         def set_precomputed_skills_data_ratio(sampling_size: float, skills_recipe: str):
-            if path.exists(skills_recipe):
+            if os.path.exists(skills_recipe):
                 with open(skills_recipe, "r", encoding="utf-8") as file:
                     skills_yaml = yaml.load(file, Loader=yaml.Loader)
 
@@ -1200,16 +1207,11 @@ def sdg_op(
         except PermissionError:
             print("Failed to set precomputed skills data ratio: Permission denied")
             print("Attempting to move default data recipes to temporary directory")
-            import os
-            import shutil
-            import tempfile
-
-            import xdg_base_dirs
 
             # Create a temporary directory
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Create a default_data_recipes directory
-                temp_dir = path.join(temp_dir, "default_data_recipes")
+                temp_dir = os.path.join(temp_dir, "default_data_recipes")
                 os.mkdir(temp_dir)
 
                 # Copy default_data_recipes/skills.yaml to the temporary directory
@@ -1222,7 +1224,7 @@ def sdg_op(
                     os.path.join(str(dir), "instructlab", "sdg")
                     for dir in xdg_base_dirs.xdg_data_dirs()
                 ]
-                temp_pipeline_dir = path.join(temp_dir, "pipeline")
+                temp_pipeline_dir = os.path.join(temp_dir, "pipeline")
                 os.mkdir(temp_pipeline_dir)
                 for d in data_dirs:
                     pipeline_path = os.path.join(d, "pipelines", pipeline)
@@ -1235,7 +1237,7 @@ def sdg_op(
                         break
 
                 # Build new skills.yaml path
-                new_skills_recipe = path.join(temp_dir, "skills.yaml")
+                new_skills_recipe = os.path.join(temp_dir, "skills.yaml")
                 print(f"New skills recipe path: {new_skills_recipe}")
 
                 # Override XDG_DATA_DIRS with the temporary directory
@@ -1661,28 +1663,18 @@ def run_mt_bench_op(
     import os
     import subprocess
 
+    import httpx
     import torch
     from instructlab.eval.mt_bench import MTBenchEvaluator
 
-    if judge_ca_cert := os.getenv("JUDGE_CA_CERT_PATH"):
-        import httpx
-        import openai
-
-        # Create a custom HTTP client
-        class CustomHttpClient(httpx.Client):
-            def __init__(self, *args, **kwargs):
-                # Use the custom CA certificate
-                kwargs.setdefault("verify", judge_ca_cert)
-                super().__init__(*args, **kwargs)
-
-        # Create a new OpenAI class that uses the custom HTTP client
-        class CustomOpenAI(openai.OpenAI):
-            def __init__(self, *args, **kwargs):
-                custom_client = CustomHttpClient()
-                super().__init__(http_client=custom_client, *args, **kwargs)
-
-        # Monkey patch the OpenAI class in the openai module, so that the eval lib can use it
-        openai.OpenAI = CustomOpenAI
+    judge_api_key = os.getenv("JUDGE_API_KEY", "")
+    judge_model_name = os.getenv("JUDGE_NAME")
+    judge_endpoint = os.getenv("JUDGE_ENDPOINT")
+    judge_ca_cert_path = os.getenv("JUDGE_CA_CERT_PATH")
+    use_tls = os.path.exists(judge_ca_cert_path) and (
+        os.path.getsize(judge_ca_cert_path) > 0
+    )
+    judge_http_client = httpx.Client(verify=judge_ca_cert_path) if use_tls else None
 
     def launch_vllm(
         model_path: str, gpu_count: int, retries: int = 120, delay: int = 10
@@ -1775,10 +1767,6 @@ def run_mt_bench_op(
 
     models_list = os.listdir(models_folder)
 
-    judge_api_key = os.getenv("JUDGE_API_KEY", "")
-    judge_model_name = os.getenv("JUDGE_NAME")
-    judge_endpoint = os.getenv("JUDGE_ENDPOINT")
-
     scores = {}
     all_mt_bench_data = []
 
@@ -1814,6 +1802,7 @@ def run_mt_bench_op(
             server_url=vllm_server,
             serving_gpus=gpu_count,
             max_workers=max_workers,
+            http_client=judge_http_client,
         )
 
         shutdown_vllm(vllm_process)
@@ -1823,6 +1812,7 @@ def run_mt_bench_op(
             api_key=judge_api_key,
             serving_gpus=gpu_count,
             max_workers=max_workers,
+            http_client=judge_http_client,
         )
 
         mt_bench_data = {
@@ -1884,30 +1874,20 @@ def run_final_eval_op(
     import os
     import subprocess
 
+    import httpx
     import torch
     from instructlab.eval.mmlu import MMLUBranchEvaluator
     from instructlab.eval.mt_bench import MTBenchBranchEvaluator
     from instructlab.model.evaluate import qa_pairs_to_qna_to_avg_scores, sort_score
 
-    if judge_ca_cert := os.getenv("JUDGE_CA_CERT_PATH"):
-        import httpx
-        import openai
-
-        # Create a custom HTTP client
-        class CustomHttpClient(httpx.Client):
-            def __init__(self, *args, **kwargs):
-                # Use the custom CA certificate
-                kwargs.setdefault("verify", judge_ca_cert)
-                super().__init__(*args, **kwargs)
-
-        # Create a new OpenAI class that uses the custom HTTP client
-        class CustomOpenAI(openai.OpenAI):
-            def __init__(self, *args, **kwargs):
-                custom_client = CustomHttpClient()
-                super().__init__(http_client=custom_client, *args, **kwargs)
-
-        # Monkey patch the OpenAI class in the openai module, so that the eval lib can use it
-        openai.OpenAI = CustomOpenAI
+    judge_api_key = os.getenv("JUDGE_API_KEY", "")
+    judge_model_name = os.getenv("JUDGE_NAME")
+    judge_endpoint = os.getenv("JUDGE_ENDPOINT")
+    judge_ca_cert_path = os.getenv("JUDGE_CA_CERT_PATH")
+    use_tls = os.path.exists(judge_ca_cert_path) and (
+        os.path.getsize(judge_ca_cert_path) > 0
+    )
+    judge_http_client = httpx.Client(verify=judge_ca_cert_path) if use_tls else None
 
     print("Starting Final Eval...")
 
@@ -2267,6 +2247,7 @@ def run_final_eval_op(
             server_url=vllm_server,
             serving_gpus=gpu_count,
             max_workers=max_workers,
+            http_client=judge_http_client,
         )
 
         shutdown_vllm(vllm_process)
@@ -2277,6 +2258,7 @@ def run_final_eval_op(
             api_key=judge_api_key,
             serving_gpus=gpu_count,
             max_workers=max_workers,
+            http_client=judge_http_client,
         )
 
         qa_pairs_and_errors.append((overall_score, qa_pairs, error_rate))
