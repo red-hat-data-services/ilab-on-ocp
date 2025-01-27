@@ -76,7 +76,7 @@ name = "click"
 version = "8.1.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "platform_system == 'Windows'" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/96/d3/f04c7bfcf5c1862a2a5b845c6b2b360488cf47af55dfa79c98f6a6bf98b5/click-8.1.7.tar.gz", hash = "sha256:ca9853ad459e787e2192211578cc907e7594e294c7ccc834310722b41b9ca6de", size = 336121 }
 wheels = [
@@ -243,6 +243,7 @@ dependencies = [
     { name = "jinja2" },
     { name = "kfp" },
     { name = "kfp-kubernetes" },
+    { name = "kubeflow-training" },
     { name = "kubernetes" },
     { name = "pre-commit" },
     { name = "ruff" },
@@ -254,6 +255,7 @@ requires-dist = [
     { name = "jinja2", specifier = ">=3.1.4" },
     { name = "kfp", specifier = "==2.9.0" },
     { name = "kfp-kubernetes", specifier = ">=1.4.0" },
+    { name = "kubeflow-training", specifier = "==1.8.1" },
     { name = "kubernetes", specifier = "==30.1.0" },
     { name = "pre-commit", specifier = ">=4.0.1" },
     { name = "ruff", specifier = ">=0.8.2" },
@@ -324,6 +326,23 @@ dependencies = [
     { name = "urllib3" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/47/95/767b6f1ef01c03d10bf71c30ca565ff81519dc99a256035be63fc0152358/kfp_server_api-2.3.0.tar.gz", hash = "sha256:504aa9f0ca047790aca67b306350aac717ae956c59450a04cf1901c9ed4dca9f", size = 84008 }
+
+[[package]]
+name = "kubeflow-training"
+version = "1.8.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "certifi" },
+    { name = "kubernetes" },
+    { name = "retrying" },
+    { name = "setuptools" },
+    { name = "six" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0c/e3/6352c5d2a7a22bb331958dd568c45f758d81c9c0a7c9d1e8933a71b4b04e/kubeflow-training-1.8.1.tar.gz", hash = "sha256:137cdeb5843f90e637fd53df988cbf6894501900c8f372e7de75a6a1302fe8f5", size = 61498 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/11/3c/8545963d2defd02868fc52fc21e4521947d3202abb7f985799b122247dbe/kubeflow_training-1.8.1-py3-none-any.whl", hash = "sha256:ef36df107b850c6e6587dc1b9b7a92aaa7b6cf28e9d73b5f1eb87dd84e80222d", size = 133880 },
+]
 
 [[package]]
 name = "kubernetes"
@@ -553,6 +572,18 @@ wheels = [
 ]
 
 [[package]]
+name = "retrying"
+version = "1.3.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ce/70/15ce8551d65b324e18c5aa6ef6998880f21ead51ebe5ed743c0950d7d9dd/retrying-1.3.4.tar.gz", hash = "sha256:345da8c5765bd982b1d1915deb9102fd3d1f7ad16bd84a9700b85f64d24e8f3e", size = 10929 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8f/04/9e36f28be4c0532c0e9207ff9dc01fb13a2b0eb036476a213b0000837d0e/retrying-1.3.4-py3-none-any.whl", hash = "sha256:8cc4d43cb8e1125e0ff3344e9de678fefd85db3b750b81b2240dc0183af37b35", size = 11602 },
+]
+
+[[package]]
 name = "rsa"
 version = "4.9"
 source = { registry = "https://pypi.org/simple" }
@@ -587,6 +618,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/0b/08/e8f519f61f1d624264bfd6b8829e4c5f31c3c61193bc3cff1f19dbe7626a/ruff-0.8.2-py3-none-win32.whl", hash = "sha256:ac42caaa0411d6a7d9594363294416e0e48fc1279e1b0e948391695db2b3d5b1", size = 8729396 },
     { url = "https://files.pythonhosted.org/packages/f8/d4/ba1c7ab72aba37a2b71fe48ab95b80546dbad7a7f35ea28cf66fc5cea5f6/ruff-0.8.2-py3-none-win_amd64.whl", hash = "sha256:2aae99ec70abf43372612a838d97bfe77d45146254568d94926e8ed5bbb409ea", size = 9594729 },
     { url = "https://files.pythonhosted.org/packages/23/34/db20e12d3db11b8a2a8874258f0f6d96a9a4d631659d54575840557164c8/ruff-0.8.2-py3-none-win_arm64.whl", hash = "sha256:fb88e2a506b70cfbc2de6fae6681c4f944f7dd5f2fe87233a7233d888bad73e8", size = 9035131 },
+]
+
+[[package]]
+name = "setuptools"
+version = "75.8.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/92/ec/089608b791d210aec4e7f97488e67ab0d33add3efccb83a056cbafe3a2a6/setuptools-75.8.0.tar.gz", hash = "sha256:c5afc8f407c626b8313a86e10311dd3f661c6cd9c09d4bf8c15c0e11f9f2b0e6", size = 1343222 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/69/8a/b9dc7678803429e4a3bc9ba462fa3dd9066824d3c607490235c6a796be5a/setuptools-75.8.0-py3-none-any.whl", hash = "sha256:e3982f444617239225d675215d51f6ba05f845d4eec313da4418fdbb56fb27e3", size = 1228782 },
 ]
 
 [[package]]
