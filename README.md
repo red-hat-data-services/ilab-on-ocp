@@ -210,3 +210,9 @@ To collaborate on this repository, please follow these steps:
     uv sync
     source .venv/bin/activate
     ```
+
+When updating python package dependencies in `pyproject.toml`, regenerate [requirements.txt](requirements.txt):
+
+```
+uv pip compile pyproject.toml > requirements.txt
+```
