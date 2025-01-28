@@ -148,6 +148,7 @@ def ilab_pipeline(
         repo_branch=sdg_repo_branch,
         repo_pr=sdg_repo_pr if sdg_repo_pr and sdg_repo_pr > 0 else None,
         repo_url=sdg_repo_url,
+        ca_cert_path="",  # TODO(gfrasca)
     )
     mount_pvc(
         task=git_clone_task,

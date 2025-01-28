@@ -270,6 +270,9 @@ components:
     executorLabel: exec-git-clone-op
     inputDefinitions:
       parameters:
+        ca_cert_path:
+          isOptional: true
+          parameterType: STRING
         repo_branch:
           parameterType: STRING
         repo_pr:
@@ -693,7 +696,7 @@ deploymentSpec:
     exec-git-clone-op:
       container:
         args:
-        - 'git clone {{$.inputs.parameters[''repo_url'']}} {{$.inputs.parameters[''taxonomy_path'']}}
+        - 'git clone  {{$.inputs.parameters[''repo_url'']}} {{$.inputs.parameters[''taxonomy_path'']}}
           && cd {{$.inputs.parameters[''taxonomy_path'']}} && if [ -n "{{$.inputs.parameters[''repo_branch'']}}"
           ]; then git fetch origin {{$.inputs.parameters[''repo_branch'']}} && git
           checkout {{$.inputs.parameters[''repo_branch'']}}; elif [ -n "{{$.inputs.parameters[''repo_pr'']}}"
@@ -1666,6 +1669,9 @@ root:
         - createpvc
         inputs:
           parameters:
+            ca_cert_path:
+              runtimeValue:
+                constant: ''
             repo_branch:
               componentInputParameter: sdg_repo_branch
             repo_pr:

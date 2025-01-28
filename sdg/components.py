@@ -13,12 +13,23 @@ def git_clone_op(
     repo_pr: Optional[int],
     repo_url: Optional[str],
     taxonomy_path: str = "/data/taxonomy",
+    ca_cert_path: Optional[str] = None,
 ):
+    import os
+
+    additional_clone_params = ""
+    additional_config_cmds = ""
+
+    if ca_cert_path and os.path.exists(f"{ca_cert_path}") and (os.path.getsize(f"{ca_cert_path}") > 0):
+        full_ca_path = os.path.abspath(f"{ca_cert_path}")
+        additional_clone_params = f"-c http.sslVerify=true -c http.sslCAInfo={full_ca_path}"
+        additional_config_cmds = f"git config http.sslVerify true && git config http.sslCAInfo {full_ca_path} &&"
+
     return dsl.ContainerSpec(
         TOOLBOX_IMAGE,
         ["/bin/sh", "-c"],
         [
-            f"git clone {repo_url} {taxonomy_path} && cd {taxonomy_path} && "
+            f"git clone {additional_clone_params} {repo_url} {taxonomy_path} && cd {taxonomy_path} && {additional_config_cmds}"
             + f'if [ -n "{repo_branch}" ]; then '
             + f"git fetch origin {repo_branch} && git checkout {repo_branch}; "
             + f'elif [ -n "{repo_pr}" ] && [ {repo_pr} -gt 0 ]; then '
