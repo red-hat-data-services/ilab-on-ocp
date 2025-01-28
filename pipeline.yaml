@@ -270,9 +270,6 @@ components:
     executorLabel: exec-git-clone-op
     inputDefinitions:
       parameters:
-        ca_cert_path:
-          isOptional: true
-          parameterType: STRING
         repo_branch:
           parameterType: STRING
         repo_pr:
@@ -696,16 +693,31 @@ deploymentSpec:
     exec-git-clone-op:
       container:
         args:
-        - 'git clone  {{$.inputs.parameters[''repo_url'']}} {{$.inputs.parameters[''taxonomy_path'']}}
-          && cd {{$.inputs.parameters[''taxonomy_path'']}} && if [ -n "{{$.inputs.parameters[''repo_branch'']}}"
-          ]; then git fetch origin {{$.inputs.parameters[''repo_branch'']}} && git
-          checkout {{$.inputs.parameters[''repo_branch'']}}; elif [ -n "{{$.inputs.parameters[''repo_pr'']}}"
-          ] && [ {{$.inputs.parameters[''repo_pr'']}} -gt 0 ]; then git fetch origin
-          pull/{{$.inputs.parameters[''repo_pr'']}}/head:{{$.inputs.parameters[''repo_pr'']}}
-          && git checkout {{$.inputs.parameters[''repo_pr'']}}; fi '
+        - "\n            # Increase logging verbosity\n            set -x &&\n\n \
+          \           # Add TLS Parameters if CA Cert exists and is non-zero size\n\
+          \            ADDITIONAL_CLONE_PARAMS=\"\"\n            if [ -s \"$TAXONOMY_CA_CERT_PATH\"\
+          \ ]; then\n                ADDITIONAL_CLONE_PARAMS=\"-c http.sslVerify=true\
+          \ -c http.sslCAInfo=$TAXONOMY_CA_CERT_PATH\"\n            fi\n\n       \
+          \     # Clone Taxonomy Repo\n            git clone $ADDITIONAL_CLONE_PARAMS\
+          \ {{$.inputs.parameters['repo_url']}} {{$.inputs.parameters['taxonomy_path']}}\
+          \ &&\n            cd {{$.inputs.parameters['taxonomy_path']}} &&\n\n   \
+          \         # Run additional configuration if TLS certs provided\n       \
+          \     if [ -s \"$TAXONOMY_CA_CERT_PATH\" ]; then\n                git config\
+          \ http.sslVerify true &&\n                git config http.sslCAInfo $TAXONOMY_CA_CERT_PATH\n\
+          \            fi &&\n\n            # Checkout and use taxonomy repo branch\
+          \ or PR if specified\n            if [ -n \"{{$.inputs.parameters['repo_branch']}}\"\
+          \ ]; then\n                git fetch origin {{$.inputs.parameters['repo_branch']}}\
+          \ && git checkout {{$.inputs.parameters['repo_branch']}};\n            elif\
+          \ [ -n \"{{$.inputs.parameters['repo_pr']}}\" ] && [ {{$.inputs.parameters['repo_pr']}}\
+          \ -gt 0 ]; then\n                git fetch origin pull/{{$.inputs.parameters['repo_pr']}}/head:{{$.inputs.parameters['repo_pr']}}\
+          \ && git checkout {{$.inputs.parameters['repo_pr']}};\n            fi\n\
+          \            "
         command:
         - /bin/sh
         - -c
+        env:
+        - name: TAXONOMY_CA_CERT_PATH
+          value: /tmp/cert/taxonomy-ca.crt
         image: registry.redhat.io/ubi9/toolbox@sha256:da31dee8904a535d12689346e65e5b00d11a6179abf1fa69b548dbd755fa2770
     exec-importer:
       importer:
@@ -1669,9 +1681,6 @@ root:
         - createpvc
         inputs:
           parameters:
-            ca_cert_path:
-              runtimeValue:
-                constant: ''
             repo_branch:
               componentInputParameter: sdg_repo_branch
             repo_pr:
@@ -2140,6 +2149,10 @@ platforms:
               outputParameterKey: name
               producerTask: createpvc
         exec-git-clone-op:
+          configMapAsVolume:
+          - configMapName: teacher-server
+            mountPath: /tmp/cert
+            optional: false
           pvcMount:
           - mountPath: /data
             taskOutputParameter:

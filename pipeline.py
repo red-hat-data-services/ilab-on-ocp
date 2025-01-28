@@ -49,6 +49,10 @@ GENERATED_STANDALONE_FILE_NAME = "standalone.py"
 DEFAULT_REPO_URL = "https://github.com/instructlab/taxonomy.git"
 
 # Model Serving SSL connection
+TAXONOMY_CA_CERT_CM_KEY = "taxonomy-ca.crt"
+TAXONOMY_CA_CERT_ENV_VAR_NAME = "TAXONOMY_CA_CERT_PATH"
+TAXONOMY_CA_CERT_PATH = "/tmp/cert"
+
 SDG_CA_CERT_CM_KEY = "ca.crt"
 SDG_CA_CERT_ENV_VAR_NAME = "SDG_CA_CERT_PATH"
 SDG_CA_CERT_PATH = "/tmp/cert"
@@ -148,7 +152,13 @@ def ilab_pipeline(
         repo_branch=sdg_repo_branch,
         repo_pr=sdg_repo_pr if sdg_repo_pr and sdg_repo_pr > 0 else None,
         repo_url=sdg_repo_url,
-        ca_cert_path="",  # TODO(gfrasca)
+    )
+    use_config_map_as_volume(
+        git_clone_task, TEACHER_CONFIG_MAP, mount_path=TAXONOMY_CA_CERT_PATH
+    )
+    git_clone_task.set_env_variable(
+        TAXONOMY_CA_CERT_ENV_VAR_NAME,
+        os.path.join(TAXONOMY_CA_CERT_PATH, TAXONOMY_CA_CERT_CM_KEY),
     )
     mount_pvc(
         task=git_clone_task,
