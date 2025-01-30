@@ -214,5 +214,5 @@ To collaborate on this repository, please follow these steps:
 When updating python package dependencies in `pyproject.toml`, regenerate [requirements.txt](requirements.txt):
 
 ```
-uv pip compile pyproject.toml > requirements.txt
+uv pip compile pyproject.toml --generate-hashes > requirements.txt
 ```
