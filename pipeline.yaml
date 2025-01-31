@@ -393,6 +393,9 @@ components:
           defaultValue: 42.0
           isOptional: true
           parameterType: NUMBER_INTEGER
+        training_image:
+          isOptional: true
+          parameterType: STRING
   comp-pytorchjob-manifest-op-2:
     executorLabel: exec-pytorchjob-manifest-op-2
     inputDefinitions:
@@ -443,6 +446,9 @@ components:
           defaultValue: 42.0
           isOptional: true
           parameterType: NUMBER_INTEGER
+        training_image:
+          isOptional: true
+          parameterType: STRING
   comp-run-final-eval-op:
     executorLabel: exec-run-final-eval-op
     inputDefinitions:
@@ -648,7 +654,7 @@ deploymentSpec:
         env:
         - name: XDG_CACHE_HOME
           value: /tmp
-        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:05cfba1fb13ed54b1de4d021da2a31dd78ba7d8cc48e10c7fe372815899a18ae
+        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.3.1
     exec-deletepvc:
       container:
         image: argostub/deletepvc
@@ -736,13 +742,14 @@ deploymentSpec:
           \ = 2,\n    num_epochs: int = 2,\n    effective_batch_size: int = 3840,\n\
           \    learning_rate: float = 1e-4,\n    num_warmup_steps: int = 800,\n  \
           \  save_samples: int = 0,\n    max_batch_len: int = 20000,\n    seed: int\
-          \ = 42,\n):\n    import inspect\n    import os\n    import time\n\n    import\
-          \ kubernetes\n    import urllib3\n    import yaml\n\n    def list_phase1_final_model():\n\
-          \        model_dir = \"/output/phase_1/model/hf_format\"\n        models\
-          \ = os.listdir(model_dir)\n        newest_idx = max(\n            (os.path.getmtime(f\"\
-          {model_dir}/{model}\"), i)\n            for i, model in enumerate(models)\n\
-          \        )[-1]\n        newest_model = models[newest_idx]\n        return\
-          \ f\"{model_dir}/{newest_model}\"\n\n    name = f\"train-phase-{phase_num}-{name_suffix.rstrip('-sdg')}\"\
+          \ = 42,\n    training_image: Optional[str] = None,\n):\n    import inspect\n\
+          \    import os\n    import time\n\n    import kubernetes\n    import urllib3\n\
+          \    import yaml\n\n    def list_phase1_final_model():\n        model_dir\
+          \ = \"/output/phase_1/model/hf_format\"\n        models = os.listdir(model_dir)\n\
+          \        newest_idx = max(\n            (os.path.getmtime(f\"{model_dir}/{model}\"\
+          ), i)\n            for i, model in enumerate(models)\n        )[-1]\n  \
+          \      newest_model = models[newest_idx]\n        return f\"{model_dir}/{newest_model}\"\
+          \n\n    name = f\"train-phase-{phase_num}-{name_suffix.rstrip('-sdg')}\"\
           \n\n    if phase_num == 1:\n        path_to_model = \"/input_model\"\n \
           \       path_to_data = \"/input_data/knowledge/data.jsonl\"\n    elif phase_num\
           \ == 2:\n        path_to_model = list_phase1_final_model()\n        path_to_data\
@@ -780,9 +787,9 @@ deploymentSpec:
           \                           --checkpoint_at_epoch\n                    \
           \  command:\n                        - /bin/bash\n                     \
           \   - '-c'\n                        - '--'\n                      image:\
-          \ {base_image}\n                      name: pytorch\n                  \
-          \    volumeMounts:\n                        - mountPath: /input_data\n \
-          \                         name: input-data\n                          readOnly:\
+          \ {training_image}\n                      name: pytorch\n              \
+          \        volumeMounts:\n                        - mountPath: /input_data\n\
+          \                          name: input-data\n                          readOnly:\
           \ true\n                        - mountPath: /input_model\n            \
           \              name: model\n                          readOnly: true\n \
           \                       - mountPath: /output\n                         \
@@ -830,8 +837,8 @@ deploymentSpec:
           \ \\\n                            --checkpoint_at_epoch\n              \
           \        command:\n                        - /bin/bash\n               \
           \         - '-c'\n                        - '--'\n                     \
-          \ image: {base_image}\n                      name: pytorch\n           \
-          \           volumeMounts:\n                        - mountPath: /input_data\n\
+          \ image: {training_image}\n                      name: pytorch\n       \
+          \               volumeMounts:\n                        - mountPath: /input_data\n\
           \                          name: input-data\n                          readOnly:\
           \ true\n                        - mountPath: /input_model\n            \
           \              name: model\n                          readOnly: true\n \
@@ -939,13 +946,14 @@ deploymentSpec:
           \ = 2,\n    num_epochs: int = 2,\n    effective_batch_size: int = 3840,\n\
           \    learning_rate: float = 1e-4,\n    num_warmup_steps: int = 800,\n  \
           \  save_samples: int = 0,\n    max_batch_len: int = 20000,\n    seed: int\
-          \ = 42,\n):\n    import inspect\n    import os\n    import time\n\n    import\
-          \ kubernetes\n    import urllib3\n    import yaml\n\n    def list_phase1_final_model():\n\
-          \        model_dir = \"/output/phase_1/model/hf_format\"\n        models\
-          \ = os.listdir(model_dir)\n        newest_idx = max(\n            (os.path.getmtime(f\"\
-          {model_dir}/{model}\"), i)\n            for i, model in enumerate(models)\n\
-          \        )[-1]\n        newest_model = models[newest_idx]\n        return\
-          \ f\"{model_dir}/{newest_model}\"\n\n    name = f\"train-phase-{phase_num}-{name_suffix.rstrip('-sdg')}\"\
+          \ = 42,\n    training_image: Optional[str] = None,\n):\n    import inspect\n\
+          \    import os\n    import time\n\n    import kubernetes\n    import urllib3\n\
+          \    import yaml\n\n    def list_phase1_final_model():\n        model_dir\
+          \ = \"/output/phase_1/model/hf_format\"\n        models = os.listdir(model_dir)\n\
+          \        newest_idx = max(\n            (os.path.getmtime(f\"{model_dir}/{model}\"\
+          ), i)\n            for i, model in enumerate(models)\n        )[-1]\n  \
+          \      newest_model = models[newest_idx]\n        return f\"{model_dir}/{newest_model}\"\
+          \n\n    name = f\"train-phase-{phase_num}-{name_suffix.rstrip('-sdg')}\"\
           \n\n    if phase_num == 1:\n        path_to_model = \"/input_model\"\n \
           \       path_to_data = \"/input_data/knowledge/data.jsonl\"\n    elif phase_num\
           \ == 2:\n        path_to_model = list_phase1_final_model()\n        path_to_data\
@@ -983,9 +991,9 @@ deploymentSpec:
           \                           --checkpoint_at_epoch\n                    \
           \  command:\n                        - /bin/bash\n                     \
           \   - '-c'\n                        - '--'\n                      image:\
-          \ {base_image}\n                      name: pytorch\n                  \
-          \    volumeMounts:\n                        - mountPath: /input_data\n \
-          \                         name: input-data\n                          readOnly:\
+          \ {training_image}\n                      name: pytorch\n              \
+          \        volumeMounts:\n                        - mountPath: /input_data\n\
+          \                          name: input-data\n                          readOnly:\
           \ true\n                        - mountPath: /input_model\n            \
           \              name: model\n                          readOnly: true\n \
           \                       - mountPath: /output\n                         \
@@ -1033,8 +1041,8 @@ deploymentSpec:
           \ \\\n                            --checkpoint_at_epoch\n              \
           \        command:\n                        - /bin/bash\n               \
           \         - '-c'\n                        - '--'\n                     \
-          \ image: {base_image}\n                      name: pytorch\n           \
-          \           volumeMounts:\n                        - mountPath: /input_data\n\
+          \ image: {training_image}\n                      name: pytorch\n       \
+          \               volumeMounts:\n                        - mountPath: /input_data\n\
           \                          name: input-data\n                          readOnly:\
           \ true\n                        - mountPath: /input_model\n            \
           \              name: model\n                          readOnly: true\n \
@@ -1369,7 +1377,7 @@ deploymentSpec:
           value: /tmp
         - name: JUDGE_CA_CERT_PATH
           value: /tmp/cert/ca.crt
-        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:05cfba1fb13ed54b1de4d021da2a31dd78ba7d8cc48e10c7fe372815899a18ae
+        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.3.1
         resources:
           accelerator:
             count: '1'
@@ -1499,7 +1507,7 @@ deploymentSpec:
           value: /tmp
         - name: JUDGE_CA_CERT_PATH
           value: /tmp/cert/ca.crt
-        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:05cfba1fb13ed54b1de4d021da2a31dd78ba7d8cc48e10c7fe372815899a18ae
+        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.3.1
         resources:
           accelerator:
             count: '1'
@@ -1613,7 +1621,7 @@ deploymentSpec:
           value: /tmp
         - name: SDG_CA_CERT_PATH
           value: /tmp/cert/ca.crt
-        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:05cfba1fb13ed54b1de4d021da2a31dd78ba7d8cc48e10c7fe372815899a18ae
+        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.3.1
     exec-sdg-to-artifact-op:
       container:
         args:
@@ -1901,6 +1909,9 @@ root:
               componentInputParameter: train_save_samples
             seed:
               componentInputParameter: train_seed
+            training_image:
+              runtimeValue:
+                constant: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.3.1
         taskInfo:
           name: pytorchjob-manifest-op
       pytorchjob-manifest-op-2:
@@ -1951,6 +1962,9 @@ root:
               componentInputParameter: train_save_samples
             seed:
               componentInputParameter: train_seed
+            training_image:
+              runtimeValue:
+                constant: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.3.1
         taskInfo:
           name: pytorchjob-manifest-op-2
       run-final-eval-op:
