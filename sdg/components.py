@@ -15,7 +15,7 @@ def git_clone_op(
     taxonomy_path: str = "/data/taxonomy",
 ):
     return dsl.ContainerSpec(
-        "registry.access.redhat.com/ubi9/toolbox",
+        TOOLBOX_IMAGE,
         ["/bin/sh", "-c"],
         [
             f"git clone {repo_url} {taxonomy_path} && cd {taxonomy_path} && "
