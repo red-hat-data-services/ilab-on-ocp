@@ -216,3 +216,15 @@ When updating python package dependencies in `pyproject.toml`, regenerate [requi
 ```
 uv pip compile pyproject.toml --generate-hashes > requirements.txt
 ```
+
+To regenerate `[requirements-build.txt](requirements-build.txt)` is currently a manual step.
+For this you need [pybuild-deps](https://pybuild-deps.readthedocs.io/en/latest/usage.html#pybuild-deps-compile) installed.
+
+Remove `kfp-pipeline-spec` from `requirement.txt`. And run:
+
+```bash
+pybuild-deps compile requirements.txt
+```
+
+> Note that, we do this because `kfp-pipeline-spec` only includes wheels and not the sources, this breaks
+> `pybuild-deps`, in the future we will need to a workaround (or get the package to include sdist) to automate this.
