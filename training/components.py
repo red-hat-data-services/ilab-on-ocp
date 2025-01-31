@@ -167,8 +167,6 @@ def pytorchjob_manifest_op(
     else:
         raise RuntimeError(f"Unsupported value of {phase_num=}")
 
-    image = "registry.stage.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.3.1"
-
     manifest = inspect.cleandoc(
         f"""
         apiVersion: kubeflow.org/v1
@@ -218,7 +216,7 @@ def pytorchjob_manifest_op(
                         - /bin/bash
                         - '-c'
                         - '--'
-                      image: {image}
+                      image: {base_image}
                       name: pytorch
                       volumeMounts:
                         - mountPath: /input_data
@@ -296,7 +294,7 @@ def pytorchjob_manifest_op(
                         - /bin/bash
                         - '-c'
                         - '--'
-                      image: {image}
+                      image: {base_image}
                       name: pytorch
                       volumeMounts:
                         - mountPath: /input_data
