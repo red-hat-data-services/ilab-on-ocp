@@ -1,9 +1,9 @@
-FROM registry.redhat.io/ubi8/python-312:1
+FROM registry.access.redhat.com/ubi8/python-312:1
 
 ARG SOURCE_CODE=.
 
 # Default for ubi8/python
-WORKDIR /opt/app-root/src/pipelines/distirbuted-ilab
+WORKDIR /opt/app-root/src/pipelines/distributed-ilab
 
 COPY ${SOURCE_CODE} .
 
