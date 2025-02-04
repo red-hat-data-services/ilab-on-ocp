@@ -55,7 +55,7 @@ jobs:
 
       - name: Compile requirements.txt
         run: |
-          uv pip compile pyproject.toml > requirements.txt
+          uv pip compile pyproject.toml --generate-hashes > requirements.txt
 
       - name: Validate requirements.txt
         run: |
