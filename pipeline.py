@@ -4,6 +4,8 @@ import os
 import typing
 from typing import List, Literal, Optional
 
+from utils.consts import RHELAI_IMAGE
+
 import click
 from kfp import compiler, dsl
 from kfp.kubernetes import (
@@ -310,6 +312,7 @@ def ilab_pipeline_wrapper(mock: List[Literal[MOCKED_STAGES]]):
             save_samples=train_save_samples,
             max_batch_len=train_max_batch_len,
             seed=train_seed,
+            training_image=RHELAI_IMAGE,
         )
         training_phase_1.after(data_processing_task, model_to_pvc_task)
         training_phase_1.set_caching_options(False)
@@ -330,6 +333,7 @@ def ilab_pipeline_wrapper(mock: List[Literal[MOCKED_STAGES]]):
             save_samples=train_save_samples,
             max_batch_len=train_max_batch_len,
             seed=train_seed,
+            training_image=RHELAI_IMAGE,
         )
 
         training_phase_2.set_caching_options(False)

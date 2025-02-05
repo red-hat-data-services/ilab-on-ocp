@@ -137,6 +137,7 @@ def pytorchjob_manifest_op(
     save_samples: int = 0,
     max_batch_len: int = 20000,
     seed: int = 42,
+    training_image: Optional[str] = None,
 ):
     import inspect
     import os
@@ -216,7 +217,7 @@ def pytorchjob_manifest_op(
                         - /bin/bash
                         - '-c'
                         - '--'
-                      image: {base_image}
+                      image: {training_image}
                       name: pytorch
                       volumeMounts:
                         - mountPath: /input_data
@@ -294,7 +295,7 @@ def pytorchjob_manifest_op(
                         - /bin/bash
                         - '-c'
                         - '--'
-                      image: {base_image}
+                      image: {training_image}
                       name: pytorch
                       volumeMounts:
                         - mountPath: /input_data
