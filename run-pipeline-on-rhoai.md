@@ -120,357 +120,405 @@ Judge and Teacher respectively.
 
 #### Deploy a judge model server (optional)
 
-Create a service account to be used for token authentication
+To deploy a judge model server, perform the following steps:
 
-```yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: judge-sa
-  namespace: <data-science-project-name/namespace>
-```
+1. Create a service account to be used for token authentication
 
-Upload [prometheus-8x7b-v2-0 model] (Judge-Model) to the same object storage as before.
+    ```yaml
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: judge-sa
+      namespace: <data-science-project-name/namespace>
+    ```
 
-For example using `ilab` to download and `s3cmd` to sync to object store you can do:
-```bash
-# You can also use Oras or Skopeo cli tools to download the model
-# If using other tools besides ilab, ensure that filenames are mapped
-# appropriately
-ilab model download --repository docker://registry.redhat.io/rhelai1/prometheus-8x7b-v2-0 --release 1.2
+1.  Upload [prometheus-8x7b-v2-0 model] (Judge-Model) to the same object storage as before.
 
-# Default cache location for ilab model download is ~/.cache/instructlab/models
-s3cmd sync path/to/model s3://your-bucket-name/judge-model/
-```
+    For example using `ilab` to download and `s3cmd` to sync to object store you can do:
+    ```bash
+    # You can also use Oras or Skopeo cli tools to download the model
+    # If using other tools besides ilab, ensure that filenames are mapped
+    # appropriately
+    ilab model download --repository docker://registry.redhat.io/rhelai1/prometheus-8x7b-v2-0 --release 1.2
 
-Navigate to the OpenShift AI dashboard
-* Choose **Data Science Projects** from the left hand menu and choose your data science project/namespace.
-* Select the **Connections** tab, and then click on the **Add connection** button. Enter the details of your S3 bucket (object store) and click **Add data connection**.
+    # Default cache location for ilab model download is ~/.cache/instructlab/models
+    s3cmd sync path/to/model s3://your-bucket-name/judge-model/
+    ```
 
-> [!NOTE]
-> Note: Before following the next step - Ensure that the `CapabilityServiceMeshAuthorization` status is `True` in `DSCinitialization` resource.
+1.  Navigate to the OpenShift AI dashboard
+    * Choose **Data Science Projects** from the left hand menu and choose your data science project/namespace.
+    * Select the **Connections** tab, and then click on the **Add connection** button. Enter the details of your S3 bucket (object store) and click **Add data connection**.
 
-Create a model server instance
-* Navigate back to **Data Science Projects** page, select your namespace again, and then select the **Models** tab
-* On the right hand side select **Deploy model** under Single-model serving platform
-* Under Serving runtime choose the serving runtime `vLLM Serving Runtime for Kserve`.
-* Check the `Make deployed models available through an external route` box.
-* Under token authentication check the `Require token authentication` box, write the name of the service account that we have created above.
-* Choose the existing data connection created earlier.
-* Click deploy.
+    > [!NOTE]
+    > Note: Before following the next step - Ensure that the `CapabilityServiceMeshAuthorization` status is `True` in `DSCinitialization` resource.
+
+1.  Create a model server instance
+    * Navigate back to **Data Science Projects** page, select your namespace again, and then select the **Models** tab
+    * On the right hand side select **Deploy model** under **Single-model serving platform**
+    * Provide the **Model deployment name** of `mistral`
+    * Under Serving runtime choose the serving runtime `vLLM Serving Runtime for Kserve`.
+    * Leave **Model framework** and **Number of model server replicas to deploy** settings as default
+    * Choose `Medium` for **Model server size**
+    * Select `NVIDIA GPU` for **Accelerator**, and set **Number of accelerators** to 1
+    * Check the `Make deployed models available through an external route` box.
+    * Under token authentication check the `Require token authentication` box, write the name of the service account that we have created above (`judge-sa`)
+    * Choose the existing data connection created earlier, and provide the path to the model (in this case, `judge-model`)
+    * Leave all other parameters as default/as-is.
+    * Click deploy.
 
 [prometheus-8x7b-v2-0 model]: https://catalog.redhat.com/software/containers/rhelai1/prometheus-8x7b-v2-0/6682611224ba6617d472f451
 
 #### Deploy judge model serving details
 
-Create a secret containing the judge model serving details
+With the judge model deployed, create some configuration files to provide the model details to the ilab pipeline
 
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: <judge-model-details-k8s-secret>
-  namespace: <data-science-project-name/namespace>
-type: Opaque
-stringData:
-  JUDGE_NAME: <judge-model-name>                              # Name of the judge model or deployment
-  JUDGE_ENDPOINT: <judge-model-endpoint>                      # Model serving endpoint, Sample format - `https://<deployed-model-server-endpoint>/v1`
-  JUDGE_API_KEY: <judge-model-api-key>                        # Deployed model-server auth token
-  JUDGE_CA_CERT: <judge-model-ca-cert-config-map-name>        # Configmap containing CA cert for the judge model (optional - required if using custom CA cert), Example - `kube-root-ca.crt`
-  JUDGE_CA_CERT_CM_KEY: <judge-model-ca-cert-config-map-key>  # Name of key inside configmap (optional - required if using custom CA cert), Example - `ca.crt`
-```
+1.  Create a ConfigMap containing the judge model serving details
+    ```yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: judge-server
+      namespace: <data-science-project-name/namespace>
+    data:
+      JUDGE_NAME: <judge-model-name>          # Name of the judge model or deployment
+      JUDGE_ENDPOINT: <judge-model-endpoint>  # Model serving endpoint, Sample format - `https://<deployed-model-server-endpoint>/v1`
+      ca.crt: |  # Optional, used to use TLS-encrypted connection with model server
+        -----BEGIN CERTIFICATE-----
+        <various PEM-formatted Certs>
+        -----END CERTIFICATE-----
+    ```
 
-> [!NOTE]
-> Note: If using a custom CA certificate you must provide the relevant data in a ConfigMap. The config map name and key
-> are then provided as a parameter to the pipeline as well as in the `judge-serving-details` secret above.
+1.  Create a Secret containing the judge model api key
 
-If you deployed the Judge server model using the optional instructions above then you can retrieve `JUDGE_API_KEY` by
-running the following command:
+    ```yaml
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: judge-server
+      namespace: <data-science-project-name/namespace>
+    type: Opaque
+    stringData:
+      JUDGE_API_KEY: <judge-model-api-key>  # Deployed model-server auth token
+    ```
 
-```bash
-JUDGE_API_KEY=$(oc -n <data-science-project-name/namespace> create token judge-sa)
-```
+    If you deployed the Judge server model using the optional instructions above then you can retrieve `JUDGE_API_KEY` by
+    running the following command:
+
+    ```bash
+    JUDGE_API_KEY=$(oc -n <data-science-project-name/namespace> create token judge-sa)
+    ```
 
 #### Deploy a teacher model server (Optional)
 
 Unlike the Judge model we have to deploy the Teacher model manually on RHOAI, this consists of deploying the K8s resources
 using `oc`.
 
-First, upload the Teacher model to s3 if it does not already exist there:
+1. First, upload the Teacher model to s3 if it does not already exist there:
 
-```bash
-# You can also use ORAS or Skopeo cli tools to download the model
-# If using other tools besides ilab, ensure that filenames are mapped
-# appropriately
-ilab model download --repository docker://registry.redhat.io/rhelai1/mixtral-8x7b-instruct-v0-1 --release 1.2
+    ```bash
+    # You can also use ORAS or Skopeo cli tools to download the model
+    # If using other tools besides ilab, ensure that filenames are mapped
+    # appropriately
+    ilab model download --repository docker://registry.redhat.io/rhelai1/mixtral-8x7b-instruct-v0-1 --release 1.2
 
-# Default cache location for ilab model download is ~/.cache/instructlab/models
-# The model should be copied in such a way that the *.safetensors are found in s3://your-bucket-name/teach-model/*.safetensors
-s3cmd sync path/to/model s3://your-bucket-name/teach-model/
-```
+    # Default cache location for ilab model download is ~/.cache/instructlab/models
+    # The model should be copied in such a way that the *.safetensors are found in s3://your-bucket-name/teach-model/*.safetensors
+    s3cmd sync path/to/model s3://your-bucket-name/teach-model/
+    ```
 
-Deploy the following `yaml` called `pre_requisites.yaml` to the `<data-science-project-name/namespace>`
-<details>
+1.  Deploy the following `yaml` called `pre_requisites.yaml` to the `<data-science-project-name/namespace>`
+    <details>
 
-<summary>pre_requisites.yaml</summary>
+    <summary>pre_requisites.yaml</summary>
 
-```yaml
----
-kind: ServiceAccount
-apiVersion: v1
-metadata:
-  name: mixtral-sa
----
-kind: Role
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: mixtral-view-role
-  labels:
-    opendatahub.io/dashboard: 'true'
-rules:
-  - verbs:
-      - get
-    apiGroups:
-      - serving.kserve.io
-    resources:
-      - inferenceservices
-    resourceNames:
-      - mixtral
----
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: mixtral-view
-  labels:
-    opendatahub.io/dashboard: 'true'
-subjects:
-  - kind: ServiceAccount
-    name: mixtral-sa
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: mixtral-view-role
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: mixtral-serving-ilab
-  labels:
-    opendatahub.io/dashboard: 'true'
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 200Gi
-  storageClassName: standard-csi
-  volumeMode: Filesystem
-```
-
-</details>
-
-```bash
-oc -n <data-science-project-name/namespace> apply -f pre_requisites.yaml
-```
-
-You will need to ensure that the `storage-config` secret exists in the `<data-science-project-name/namespace>` namespace.
-And this `storage-config` has the configuration for the bucket where the teacher model is stored.
-
-```yaml
-apiVersion: v1
-stringData:
-  aws-connection-my-bucket: |
-    {
-      "type": "s3",
-      "access_key_id": "your_accesskey",
-      "secret_access_key": "your_secretkey",
-      "endpoint_url": "https://s3-us-east-2.amazonaws.com",
-      "bucket": "mybucket",
-      "default_bucket": "mybucket",
-      "region": "us-east-2"
-    }
-kind: Secret
-metadata:
-  name: storage-config
-type: Opaque
-```
-If this secret does not exist in this namespace, then create it. If it does exist, then ensure there is an entry
-for the bucket that stores the teacher model. The `key` is used in the `InferenceService` spec below.
-
-Next we need to create the custom `ServingRuntime` and `InferenceService`.
-
-Similar to above, deploy the following `yaml` files to the namespace `<data-science-project-name/namespace>`
-
-You will need to update the `spec.model.storage.path` in the `InferenceService` to match the path where the model files are
-stored in your bucket. The `key` should match the value in your `storage-config` secret that has the bucket credentials.
-In our example above we use `aws-connection-my-bucket`.
-
-<details>
-<summary>servingruntime.mixtral.yaml</summary>
-
-```yaml
----
-apiVersion: serving.kserve.io/v1alpha1
-kind: ServingRuntime
-metadata:
-  annotations:
-    opendatahub.io/accelerator-name: migrated-gpu
-    opendatahub.io/apiProtocol: REST
-    opendatahub.io/recommended-accelerators: '["nvidia.com/gpu"]'
-    opendatahub.io/template-display-name: Mixtral ServingRuntime
-    opendatahub.io/template-name: vllm-runtime
-    openshift.io/display-name: mixtral
-  labels:
-    opendatahub.io/dashboard: "true"
-  name: mixtral
-spec:
-  annotations:
-    prometheus.io/path: /metrics
-    prometheus.io/port: "8080"
-  containers:
-  - args:
-    - --port=8080
-    - --model=/mnt/models
-    - --served-model-name={{.Name}}
-    - --distributed-executor-backend=mp
-    command:
-    - python
-    - -m
-    - vllm.entrypoints.openai.api_server
-    env:
-    - name: HF_HOME
-      value: /tmp/hf_home
-    image: quay.io/modh/vllm@sha256:3c56d4c2a5a9565e8b07ba17a6624290c4fb39ac9097b99b946326c09a8b40c8
-    name: kserve-container
-    ports:
-    - containerPort: 8080
-      protocol: TCP
-    volumeMounts:
-    - mountPath: /dev/shm
-      name: shm
-    - mountPath: /mnt
-      name: mixtral-serve
-  multiModel: false
-  storageHelper:
-    disabled: true
-  supportedModelFormats:
-  - autoSelect: true
-    name: vLLM
-  volumes:
-  - name: mixtral-serve
-    persistentVolumeClaim:
-      claimName: mixtral-serving-ilab
-  - emptyDir:
-      medium: Memory
-      sizeLimit: 2Gi
-    name: shm
-```
-
-</details>
-
-<details>
-
-<summary>inferenceservice.mixtral.yaml</summary>
-
-```yaml
----
-apiVersion: serving.kserve.io/v1beta1
-kind: InferenceService
-metadata:
-  annotations:
-    openshift.io/display-name: mixtral
-    security.opendatahub.io/enable-auth: "true"
-    serving.knative.openshift.io/enablePassthrough: "true"
-    sidecar.istio.io/inject: "true"
-    sidecar.istio.io/rewriteAppHTTPProbers: "true"
-  finalizers:
-  - inferenceservice.finalizers
-  labels:
-    opendatahub.io/dashboard: "true"
-  name: mixtral
-spec:
-  predictor:
-    maxReplicas: 1
-    minReplicas: 1
-    model:
-      args:
-      - --dtype=bfloat16
-      - --tensor-parallel-size=4
-      - --enable-lora
-      - --max-lora-rank=64
-      - --lora-dtype=bfloat16
-      - --fully-sharded-loras
-      - --lora-modules
-      - skill-classifier-v3-clm=/mnt/models/skills
-      - text-classifier-knowledge-v3-clm=/mnt/models/knowledge
-      modelFormat:
-        name: vLLM
-      name: ""
+    ```yaml
+    ---
+    kind: ServiceAccount
+    apiVersion: v1
+    metadata:
+      name: mixtral-sa
+    ---
+    kind: Role
+    apiVersion: rbac.authorization.k8s.io/v1
+    metadata:
+      name: mixtral-view-role
+      labels:
+        opendatahub.io/dashboard: 'true'
+    rules:
+      - verbs:
+          - get
+        apiGroups:
+          - serving.kserve.io
+        resources:
+          - inferenceservices
+        resourceNames:
+          - mixtral
+    ---
+    kind: RoleBinding
+    apiVersion: rbac.authorization.k8s.io/v1
+    metadata:
+      name: mixtral-view
+      labels:
+        opendatahub.io/dashboard: 'true'
+    subjects:
+      - kind: ServiceAccount
+        name: mixtral-sa
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: Role
+      name: mixtral-view-role
+    ---
+    kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: mixtral-serving-ilab
+      labels:
+        opendatahub.io/dashboard: 'true'
+    spec:
+      accessModes:
+        - ReadWriteOnce
       resources:
-        limits:
-          cpu: "4"
-          memory: 60Gi
-          nvidia.com/gpu: "4"
         requests:
-          cpu: "4"
-          memory: 60Gi
-          nvidia.com/gpu: "4"
-      runtime: mixtral
-      storage:
-        # the secret name of the secret deployed earlier
-        key: aws-connection-my-bucket
-        # update this to match the path in your bucket
-        path: <prefix-path-to-mixtral-model-in-s3>
-    tolerations:
-    - effect: NoSchedule
-      key: nvidia.com/gpu
-      operator: Exists
-```
+          storage: 200Gi
+      storageClassName: standard-csi
+      volumeMode: Filesystem
+    ```
 
-</details>
+    </details>
 
-```bash
-oc -n <data-science-project-name/namespace> apply -f servingruntime.mixtral.yaml
-oc -n <data-science-project-name/namespace> apply -f inferenceservice.mixtral.yaml
-```
+    ```bash
+    oc -n <data-science-project-name/namespace> apply -f pre_requisites.yaml
+    ```
 
-A new pod named `mixtral-predictor-0000#-deployment-<hash>` should be created. This should result in a successful
-running pod. If the pod does not come up successfully, you inspect the `.status` field for the `InferenceService`
-for issues.
+1.  Next, ensure object storage connection details are provided.
 
-```bash
-oc -n <data-science-project-name/namespace> get inferenceservice mixtral -o yaml
-```
+
+    To do this, you will need to ensure that the `storage-config` secret exists in the `<data-science-project-name/namespace>` namespace, and this `storage-config` has the configuration for the bucket where the teacher model is stored.
+
+    <details>
+
+    <summary>storage-config.yaml</summary>
+
+    ```yaml
+    apiVersion: v1
+    stringData:
+      aws-connection-my-bucket: |
+        {
+          "type": "s3",
+          "access_key_id": "your_accesskey",
+          "secret_access_key": "your_secretkey",
+          "endpoint_url": "https://s3-us-east-2.amazonaws.com",
+          "bucket": "mybucket",
+          "default_bucket": "mybucket",
+          "region": "us-east-2"
+        }
+    kind: Secret
+    metadata:
+      name: storage-config
+    type: Opaque
+    ```
+
+    </details>
+
+    If this secret does not exist in this namespace, then create it using `oc`:
+
+    ```bash
+    oc -n <data-science-project-name/namespace> apply -f storage-config.yaml
+    ```
+
+    If it does exist, then ensure there is an entry for the bucket that stores the teacher model.
+    The `key` is used in the `InferenceService` spec below.
+
+1.  Finally, we need to create the custom `ServingRuntime` and `InferenceService`.
+
+    Similar to above, deploy the following `yaml` files to the namespace `<data-science-project-name/namespace>`
+
+    You will need to update the `spec.model.storage.path` in the `InferenceService` to match the path where the
+    model files are stored in your bucket. The `key` should match the value in your `storage-config` secret that 
+    has the bucket credentials.  In our example above we use `aws-connection-my-bucket`.
+
+    <details>
+    <summary>servingruntime.mixtral.yaml</summary>
+
+    ```yaml
+    ---
+    apiVersion: serving.kserve.io/v1alpha1
+    kind: ServingRuntime
+    metadata:
+      annotations:
+        opendatahub.io/accelerator-name: migrated-gpu
+        opendatahub.io/apiProtocol: REST
+        opendatahub.io/recommended-accelerators: '["nvidia.com/gpu"]'
+        opendatahub.io/template-display-name: Mixtral ServingRuntime
+        opendatahub.io/template-name: vllm-runtime
+        openshift.io/display-name: mixtral
+      labels:
+        opendatahub.io/dashboard: "true"
+      name: mixtral
+    spec:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8080"
+      containers:
+      - args:
+        - --port=8080
+        - --model=/mnt/models
+        - --served-model-name={{.Name}}
+        - --distributed-executor-backend=mp
+        command:
+        - python
+        - -m
+        - vllm.entrypoints.openai.api_server
+        env:
+        - name: HF_HOME
+          value: /tmp/hf_home
+        image: quay.io/modh/vllm@sha256:3c56d4c2a5a9565e8b07ba17a6624290c4fb39ac9097b99b946326c09a8b40c8
+        name: kserve-container
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /dev/shm
+          name: shm
+        - mountPath: /mnt
+          name: mixtral-serve
+      multiModel: false
+      storageHelper:
+        disabled: true
+      supportedModelFormats:
+      - autoSelect: true
+        name: vLLM
+      volumes:
+      - name: mixtral-serve
+        persistentVolumeClaim:
+          claimName: mixtral-serving-ilab
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 2Gi
+        name: shm
+    ```
+
+    </details>
+
+    <details>
+
+    <summary>inferenceservice.mixtral.yaml</summary>
+
+    ```yaml
+    ---
+    apiVersion: serving.kserve.io/v1beta1
+    kind: InferenceService
+    metadata:
+      annotations:
+        openshift.io/display-name: mixtral
+        security.opendatahub.io/enable-auth: "true"
+        serving.knative.openshift.io/enablePassthrough: "true"
+        sidecar.istio.io/inject: "true"
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"
+      finalizers:
+      - inferenceservice.finalizers
+      labels:
+        opendatahub.io/dashboard: "true"
+      name: mixtral
+    spec:
+      predictor:
+        maxReplicas: 1
+        minReplicas: 1
+        model:
+          args:
+          - --dtype=bfloat16
+          - --tensor-parallel-size=4
+          - --enable-lora
+          - --max-lora-rank=64
+          - --lora-dtype=bfloat16
+          - --fully-sharded-loras
+          - --lora-modules
+          - skill-classifier-v3-clm=/mnt/models/skills
+          - text-classifier-knowledge-v3-clm=/mnt/models/knowledge
+          modelFormat:
+            name: vLLM
+          name: ""
+          resources:
+            limits:
+              cpu: "4"
+              memory: 60Gi
+              nvidia.com/gpu: "4"
+            requests:
+              cpu: "4"
+              memory: 60Gi
+              nvidia.com/gpu: "4"
+          runtime: mixtral
+          storage:
+            # the secret name of the secret deployed earlier
+            key: aws-connection-my-bucket
+            # update this to match the path in your bucket
+            path: <prefix-path-to-mixtral-model-in-s3>
+        tolerations:
+        - effect: NoSchedule
+          key: nvidia.com/gpu
+          operator: Exists
+    ```
+
+    </details>
+
+
+    Make sure to update the s3 path to the model in the InferenceService, then deploy these
+    YAML files using the following commands:
+
+    ```bash
+    oc -n <data-science-project-name/namespace> apply -f servingruntime.mixtral.yaml
+    oc -n <data-science-project-name/namespace> apply -f inferenceservice.mixtral.yaml
+    ```
+
+1.  Once completed, a new pod named `mixtral-predictor-0000#-deployment-<hash>` should be created.   If the pod does not come up successfully, you inspect the `.status` field for the `InferenceService` for issues.
+
+    ```bash
+    oc -n <data-science-project-name/namespace> get inferenceservice mixtral -o yaml
+    ```
 
 #### Deploy teacher model serving details
 
-Create a secret containing the Teacher model serving details
+Similar to the judge model setup, create some configuration files to provide the model details to the ilab pipeline
 
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: <teacher-model-details-k8s-secret>
-  namespace: <data-science-project-name/namespace>
-type: Opaque
-stringData:
-  api_key:  <teacher-model-api-key>                      # Deployed model-server auth token
-  endpoint: <teacher-model-endpoint>                     # Model serving endpoint, Sample format - `https://<deployed-model-server-endpoint>/v1`
-  model: <teacher-model-name>         # Name of the teacher model or deployment
-  SDG_CA_CERT:  <teacher-model-ca-config-map-name>       # Configmap containing CA cert for the teacher model (optional - required if using custom CA cert), Example - `kube-root-ca.crt`
-  SDG_CA_CERT_CM_KEY: <teacher-model-ca-config-map-key>  # Name of key inside configmap (optional - required if using custom CA cert), Example - `ca.crt`
-```
+1.  Create a ConfigMap containing the teacher model serving details
+    ```yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: teacher-server
+      namespace: <data-science-project-name/namespace>
+    data:
+      model: <teacher-model-name>       # Name of the teacher model or deployment
+      endpoint: <judge-model-endpoint>  # Model serving endpoint, Sample format - `https://<deployed-model-server-endpoint>/v1`
+      ca.crt: |  # Optional, used to use TLS-encrypted connection with model server
+        -----BEGIN CERTIFICATE-----
+        <various PEM-formatted Certs>
+        -----END CERTIFICATE-----
+    ```
 
-> [!NOTE]
-> Note: If using a custom CA certificate you must provide the relevant data in a ConfigMap. The config map name and
-> key are then provided as a parameter to the pipeline as well as in the `teacher-model-details-k8s-secret` secret above.
+1.  Create a Secret containing the teacher model api key:
 
-If you deployed the Teacher server model using the optional instructions above then you can retrieve `api_key` by
-running the following command:
+    ```yaml
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: teacher-server
+      namespace: <data-science-project-name/namespace>
+    type: Opaque
+    stringData:
+      api_key:  <teacher-model-api-key>  # Deployed model-server auth token
+    ```
 
-```bash
-SDG_API_KEY=$(oc -n <data-science-project-name/namespace> create token mixtral-sa)
-```
+    > [!NOTE]
+    > Note: If using a custom CA certificate you must provide the relevant data in a ConfigMap. The config map name and
+    > key are then provided as a parameter to the pipeline as well as in the `teacher-model-details-k8s-secret` secret above.
+
+    If you deployed the Teacher server model using the optional instructions above then you can retrieve `api_key` by
+    running the following command:
+
+    ```bash
+    SDG_API_KEY=$(oc -n <data-science-project-name/namespace> create token mixtral-sa)
+    ```
 
 ### (Optional) - Setup NFS StorageClass
 
@@ -482,7 +530,7 @@ This step is needed when the cluster doesn't have a storage provisioner capable 
 
 Installing the NFS CSI driver
 ```bash
-$ curl -skSL https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/v4.9.0/deploy/install-driver.sh | bash -s v4.9.0 --`
+$ curl -skSL https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/v4.9.0/deploy/install-driver.sh | bash -s v4.9.0 --
 ```
 
 For deploying an in-cluster NFS server, apply [nfs-server-deployment.yaml] file
