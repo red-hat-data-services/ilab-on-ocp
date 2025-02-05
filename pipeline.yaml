@@ -654,7 +654,7 @@ deploymentSpec:
         env:
         - name: XDG_CACHE_HOME
           value: /tmp
-        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.3.1
+        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:05cfba1fb13ed54b1de4d021da2a31dd78ba7d8cc48e10c7fe372815899a18ae
     exec-deletepvc:
       container:
         image: argostub/deletepvc
@@ -1377,11 +1377,11 @@ deploymentSpec:
           value: /tmp
         - name: JUDGE_CA_CERT_PATH
           value: /tmp/cert/ca.crt
-        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.3.1
+        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:05cfba1fb13ed54b1de4d021da2a31dd78ba7d8cc48e10c7fe372815899a18ae
         resources:
           accelerator:
-            count: '1'
-            type: nvidia.com/gpu
+            resourceCount: '1'
+            resourceType: nvidia.com/gpu
     exec-run-mt-bench-op:
       container:
         args:
@@ -1507,11 +1507,11 @@ deploymentSpec:
           value: /tmp
         - name: JUDGE_CA_CERT_PATH
           value: /tmp/cert/ca.crt
-        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.3.1
+        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:05cfba1fb13ed54b1de4d021da2a31dd78ba7d8cc48e10c7fe372815899a18ae
         resources:
           accelerator:
-            count: '1'
-            type: nvidia.com/gpu
+            resourceCount: '1'
+            resourceType: nvidia.com/gpu
     exec-sdg-op:
       container:
         args:
@@ -1621,7 +1621,7 @@ deploymentSpec:
           value: /tmp
         - name: SDG_CA_CERT_PATH
           value: /tmp/cert/ca.crt
-        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.3.1
+        image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:05cfba1fb13ed54b1de4d021da2a31dd78ba7d8cc48e10c7fe372815899a18ae
     exec-sdg-to-artifact-op:
       container:
         args:
@@ -1911,7 +1911,7 @@ root:
               componentInputParameter: train_seed
             training_image:
               runtimeValue:
-                constant: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.3.1
+                constant: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:05cfba1fb13ed54b1de4d021da2a31dd78ba7d8cc48e10c7fe372815899a18ae
         taskInfo:
           name: pytorchjob-manifest-op
       pytorchjob-manifest-op-2:
@@ -1964,7 +1964,7 @@ root:
               componentInputParameter: train_seed
             training_image:
               runtimeValue:
-                constant: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.3.1
+                constant: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:05cfba1fb13ed54b1de4d021da2a31dd78ba7d8cc48e10c7fe372815899a18ae
         taskInfo:
           name: pytorchjob-manifest-op-2
       run-final-eval-op:
