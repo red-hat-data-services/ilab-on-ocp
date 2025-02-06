@@ -11,7 +11,7 @@
 #    mt_bench_merge_system_user_message: bool [Default: False]
 #    sdg_base_model: str [Default: 's3://<BUCKET>/<PATH_TO_MODEL>']
 #    sdg_max_batch_len: int [Default: 5000.0]
-#    sdg_pipeline: str [Default: 'full']
+#    sdg_pipeline: str [Default: '/usr/share/instructlab/sdg/pipelines/agentic']
 #    sdg_repo_branch: str
 #    sdg_repo_pr: int
 #    sdg_repo_url: str [Default: 'https://github.com/instructlab/taxonomy.git']
@@ -2019,7 +2019,7 @@ root:
         isOptional: true
         parameterType: NUMBER_INTEGER
       sdg_pipeline:
-        defaultValue: full
+        defaultValue: /usr/share/instructlab/sdg/pipelines/agentic
         description: 'SDG parameter. Data generation pipeline to use. Available: ''simple'',
           ''full'', or a valid path to a directory of pipeline workflow YAML files.
           Note that ''full'' requires a larger teacher model, Mixtral-8x7b.'
