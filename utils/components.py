@@ -15,6 +15,26 @@ def pvc_to_mt_bench_op(mt_bench_output: dsl.Output[dsl.Artifact], pvc_path: str)
 
 
 @dsl.container_component
+def pvc_to_mt_bench_branch_op(
+    mt_bench_branch_output: dsl.Output[dsl.Artifact], pvc_path: str
+):
+    return dsl.ContainerSpec(
+        TOOLBOX_IMAGE,
+        ["/bin/sh", "-c"],
+        [f"cp -r {pvc_path} {mt_bench_branch_output.path}"],
+    )
+
+
+@dsl.container_component
+def pvc_to_mmlu_branch_op(mmlu_branch_output: dsl.Output[dsl.Artifact], pvc_path: str):
+    return dsl.ContainerSpec(
+        TOOLBOX_IMAGE,
+        ["/bin/sh", "-c"],
+        [f"cp -r {pvc_path} {mmlu_branch_output.path}"],
+    )
+
+
+@dsl.container_component
 def pvc_to_model_op(model: dsl.Output[dsl.Model], pvc_path: str):
     return dsl.ContainerSpec(
         TOOLBOX_IMAGE,
