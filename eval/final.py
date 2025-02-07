@@ -1,15 +1,13 @@
 # type: ignore
 # pylint: disable=import-outside-toplevel,import-error
 
-from kfp.dsl import Artifact, Output, component
+from kfp.dsl import Metrics, Output, component
 
-from utils.consts import RHELAI_IMAGE
+from utils.consts import PYTHON_IMAGE, RHELAI_IMAGE
 
 
 @component(base_image=RHELAI_IMAGE, install_kfp_package=False)
 def run_final_eval_op(
-    mmlu_branch_output: Output[Artifact],
-    mt_bench_branch_output: Output[Artifact],
     base_model_dir: str,
     base_branch: str,
     candidate_branch: str,
@@ -20,10 +18,13 @@ def run_final_eval_op(
     candidate_model: str = None,
     taxonomy_path: str = "/input/taxonomy",
     sdg_path: str = "/input/sdg",
+    mmlu_branch_output_path: str = "/output/mmlu_branch",
+    mt_bench_branch_output_path: str = "/output/mt_bench_branch",
 ):
     import json
     import os
     import subprocess
+    from pathlib import Path
 
     import httpx
     import torch
@@ -320,13 +321,18 @@ def run_final_eval_op(
             "report_title": "KNOWLEDGE EVALUATION REPORT",
             "max_score": "1.0",
             "model": candidate_model,
-            "model_score": round(overall_score, 2),
+            "trained_model_score": round(overall_score, 2),
             "base_model": base_model_dir,
             "base_model_score": round(base_overall_score, 2),
             "summary": summary,
         }
 
-        with open(mmlu_branch_output.path, "w", encoding="utf-8") as f:
+        if not os.path.exists(mmlu_branch_output_path):
+            os.makedirs(mmlu_branch_output_path)
+        mmlu_branch_output_file = (
+            Path(mmlu_branch_output_path) / "mmlu_branch_data.json"
+        )
+        with open(mmlu_branch_output_file, "w", encoding="utf-8") as f:
             json.dump(mmlu_branch_data, f, indent=4)
     else:
         print("No MMLU tasks directories found, skipping MMLU_branch evaluation.")
@@ -464,11 +470,48 @@ def run_final_eval_op(
         "model": candidate_model,
         "judge_model": judge_model_name,
         "max_score": "10.0",
-        "overall_score": overall_score,
-        "base_overall_score": base_overall_score,
+        "trained_model_score": overall_score,
+        "base_model_score": base_overall_score,
         "error_rate": error_rate,
         "summary": summary,
     }
 
-    with open(mt_bench_branch_output.path, "w", encoding="utf-8") as f:
+    if not os.path.exists(mt_bench_branch_output_path):
+        os.makedirs(mt_bench_branch_output_path)
+    mt_bench_branch_data_file = (
+        Path(mt_bench_branch_output_path) / "mt_bench_branch_data.json"
+    )
+    with open(
+        mt_bench_branch_data_file,
+        "w",
+        encoding="utf-8",
+    ) as f:
         json.dump(mt_bench_branch_data, f, indent=4)
+
+
+@component(base_image=PYTHON_IMAGE, install_kfp_package=False)
+def generate_metrics_report_op(
+    metrics: Output[Metrics],
+):
+    import json
+
+    reports = {
+        "mt_bench": "/output/mt_bench_data.json",
+        "mt_bench_branch": "/output/mt_bench_branch/mt_bench_branch_data.json",
+        "mmlu_branch": "/output/mmlu_branch/mmlu_branch_data.json",
+    }
+
+    for report, file_name in reports.items():
+        with open(file_name, "r", encoding="utf-8") as f:
+            report_data = json.load(f)
+
+        if report == "mt_bench":
+            metrics.log_metric(f"{report}_best_model", report_data["best_model"])
+            metrics.log_metric(f"{report}_best_score", report_data["best_score"])
+        else:
+            metrics.log_metric(
+                f"{report}_trained_model_score", report_data["trained_model_score"]
+            )
+            metrics.log_metric(
+                f"{report}_base_model_score", report_data["base_model_score"]
+            )

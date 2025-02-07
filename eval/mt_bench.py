@@ -17,7 +17,6 @@ def run_mt_bench_op(
     max_workers: str,
     models_folder: str,
     output_path: str = "/output/mt_bench_data.json",
-    best_score_file: Optional[str] = None,
 ) -> NamedTuple("outputs", best_model=str, best_score=float):
     import json
     import os
@@ -188,15 +187,17 @@ def run_mt_bench_op(
         all_mt_bench_data.append(mt_bench_data)
         scores[model_path] = overall_score
 
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(all_mt_bench_data, f, indent=4)
-
     outputs = NamedTuple("outputs", best_model=str, best_score=float)
     best_model = max(scores, key=scores.get)
     best_score = scores[best_model]
-    if best_score_file:
-        with open(best_score_file, "w", encoding="utf-8") as f:
-            json.dump({"best_model": best_model, "best_score": best_score}, f, indent=4)
+    mt_bench_report = {
+        "best_model": best_model,
+        "best_score": best_score,
+        "reports": all_mt_bench_data,
+    }
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(mt_bench_report, f, indent=4)
 
     # Rename the best model directory to "candidate_model" for the next step
     # So we know which model to use for the final evaluation
