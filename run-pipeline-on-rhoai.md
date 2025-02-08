@@ -30,18 +30,18 @@ This file provides step-by-step instructions for setting up and using the Data S
   * **Mirror Required Images**:
 
     In a disconnected environment, you must mirror the following container images to your internal registry before running the pipeline. Use tools like `oc adm release mirror`, `skopeo`, or `oras` to mirror these images:
-    - `registry.redhat.io/ubi9/toolbox@sha256:da31dee8904a535d12689346e65e5b00d11a6179abf1fa69b548dbd755fa2770`
-    - `registry.redhat.io/openshift4/ose-cli@sha256:1d5c8442a6ec745e6ae44a7738c0681f1e21aac8be76ba826c2ddf2eed8475db`
-    - `registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:b3dc9af0244aa6b84e6c3ef53e714a316daaefaae67e28de397cd71ee4b2ac7e`
-    - `registry.redhat.io/rhelai1/skills-adapter-v3@sha256:53dd11a762bb39fc33c15499891309f0cdc8dbfd02abf94c9c60aad643aca255`
-    - `registry.redhat.io/rhelai1/knowledge-adapter-v3@sha256:ef1608ec78d5e39655b505544c0f30a015a6c9cb7e2b2deffe394791f8c76c6f`
-    - `registry.redhat.io/rhelai1/mixtral-8x7b-instruct-v0-1@sha256:bc08e466aa35352a621d0ad221c2e247ff9751f4cb6cffe00d5894ce6bfd3fd7`
-    - `registry.redhat.io/rhelai1/prometheus-8x7b-v2-0@sha256:9fcb49c230f6e73ff944377307bb83a05ae3ac20300af75e429151f4f8bf4285`
-    - `quay.io/modh/odh-generic-data-science-notebook@sha256:7c1a4ca213b71d342a2d1366171304e469da06d5f15710fab5dd3ce013aa1b73`
-    - `quay.io/modh/vllm@sha256:3c56d4c2a5a9565e8b07ba17a6624290c4fb39ac9097b99b946326c09a8b40c8`
-    - `quay.io/modh/vllm@sha256:97b91f9bd71202f5de8d379cfb61baec887b47f836a2ff8b158c946196de5660`
-    - `quay.io/opendatahub/workbench-images@sha256:7f26f5f2bec4184af15acd95f29b3450526c5c28c386b6cb694fbe82d71d0b41`
-    - `ghcr.io/oras-project/oras:main@sha256:8859e7e3ae510fb921ebeb109ac9d3e3bb91799e0d52001ae456df33929029db`
+    - `registry.redhat.io/ubi9/toolbox@sha256:<sha-hash>`
+    - `registry.redhat.io/openshift4/ose-cli@<sha-hash>`
+    - `registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:<sha-hash>`
+    - `registry.redhat.io/rhelai1/skills-adapter-v3@sha256:<sha-hash>`
+    - `registry.redhat.io/rhelai1/knowledge-adapter-v3@sha256:<sha-hash>`
+    - `registry.redhat.io/rhelai1/mixtral-8x7b-instruct-v0-1@sha256:<sha-hash>`
+    - `registry.redhat.io/rhelai1/prometheus-8x7b-v2-0@sha256:<sha-hash>`
+    - `quay.io/modh/odh-generic-data-science-notebook@sha256:<sha-hash>`
+    - `quay.io/modh/vllm@sha256:<sha-hash>`
+    - `quay.io/modh/vllm@sha256:<sha-hash>`
+    - `quay.io/opendatahub/workbench-images@sha256:<sha-hash>`
+    - `ghcr.io/oras-project/oras:main@sha256:<sha-hash>`
 
   * **500GB PersistentVolumeClaim (PVC) for Mixtral**:
 
@@ -67,6 +67,8 @@ Before running the training and evaluation steps we must complete the following 
     * [Deploy a teacher model server](#deploy-a-teacher-model-server-optional) (Optional)
     * [Deploy teacher model serving details](#deploy-teacher-model-serving-details)
 1. [Setup NFS StorageClass](#optional---setup-nfs-storageclass) (Optional)
+1. [Set up Accelerator Profile](#accelerator-profile)
+1. [Set up TLS Certificates](#signed-certificate) (Optional)
 1. [Set Up Data Science Pipelines Server and Run InstructLab Pipeline](#set-up-data-science-pipelines-server-and-run-instructLab-pipeline)
 
 ### Prepare base model and push to object store
@@ -149,10 +151,10 @@ To deploy a judge model server, perform the following steps:
     * Choose **Data Science Projects** from the left hand menu and choose your data science project/namespace.
     * Select the **Connections** tab, and then click on the **Add connection** button. Enter the details of your S3 bucket (object store) and click **Add data connection**.
 
-    > [!NOTE]
-    > Note: Before following the next step - Ensure that the `CapabilityServiceMeshAuthorization` status is `True` in `DSCinitialization` resource.
+> [!NOTE]
+> Note: Before following the next step - Ensure that the `CapabilityServiceMeshAuthorization` status is `True` in `DSCinitialization` resource.
 
-1.  Create a model server instance
+4.  Create a model server instance
     * Navigate back to **Data Science Projects** page, select your namespace again, and then select the **Models** tab
     * On the right hand side select **Deploy model** under **Single-model serving platform**
     * Provide the **Model deployment name** of `mistral`
@@ -334,7 +336,7 @@ using `oc`.
     Similar to above, deploy the following `yaml` files to the namespace `<data-science-project-name/namespace>`
 
     You will need to update the `spec.model.storage.path` in the `InferenceService` to match the path where the
-    model files are stored in your bucket. The `key` should match the value in your `storage-config` secret that 
+    model files are stored in your bucket. The `key` should match the value in your `storage-config` secret that
     has the bucket credentials.  In our example above we use `aws-connection-my-bucket`.
 
     <details>
@@ -372,7 +374,7 @@ using `oc`.
         env:
         - name: HF_HOME
           value: /tmp/hf_home
-        image: quay.io/modh/vllm@sha256:3c56d4c2a5a9565e8b07ba17a6624290c4fb39ac9097b99b946326c09a8b40c8
+        image: quay.io/modh/vllm
         name: kserve-container
         ports:
         - containerPort: 8080
@@ -509,9 +511,9 @@ Similar to the judge model setup, create some configuration files to provide the
       api_key:  <teacher-model-api-key>  # Deployed model-server auth token
     ```
 
-    > [!NOTE]
-    > Note: If using a custom CA certificate you must provide the relevant data in a ConfigMap. The config map name and
-    > key are then provided as a parameter to the pipeline as well as in the `teacher-model-details-k8s-secret` secret above.
+> [!NOTE]
+> Note: If using a custom CA certificate you must provide the relevant data in a ConfigMap. The config map name and
+> key are then provided as a parameter to the pipeline as well as in the `teacher-model-details-k8s-secret` secret above.
 
     If you deployed the Teacher server model using the optional instructions above then you can retrieve `api_key` by
     running the following command:
@@ -550,7 +552,7 @@ oc apply -f ./standalone/nfs-storage-class.yaml
 [nfs-storage-class.yaml]:/standalone/nfs-storage-class.yaml
 [nfs-server-deployment.yaml]:/standalone/nfs-server-deployment.yaml
 
-#### Accelerator Profile:
+### Accelerator Profile:
 An accelerator profile must also be defined within the RHOAI dashboard or via CLI to enable GPU acceleration for model serving with Kserve Serving.
 
 ```
@@ -567,7 +569,7 @@ items:
     identifier: nvidia.com/gpu
     tolerations: []
 ```
-#### Signed Certificate:
+### Signed Certificate:
 A signed certificate ensures that there are not any unnecessary issues when running the training pipeline.
 
 To deploy a signed certificate in your cluster follow [trusted cluster cert](signed-certificate/README.md) documentation.
