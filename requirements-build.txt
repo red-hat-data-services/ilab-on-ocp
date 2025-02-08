@@ -27,7 +27,7 @@ hatchling==1.27.0
     #   hatch-vcs
     #   platformdirs
     #   virtualenv
-maturin==1.8.1
+maturin==1.8.2
     # via ruff
 mypy==1.14.0
     # via charset-normalizer
