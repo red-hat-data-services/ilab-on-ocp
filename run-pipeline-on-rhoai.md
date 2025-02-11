@@ -12,8 +12,9 @@ This file provides step-by-step instructions for setting up and using the Data S
     * Red Hat Openshift Serverless
     * Red Hat OpenShift Service Mesh v2
       * NOTE: v3 is not compatible with RHOAI
+    * NVIDIA GPU Operator 24.6
+      * NOTE: Because of a known issue with CUDA/Driver versions mismatch, you can only use this Operator version.
     * Red Hat Openshift AI and operator dependencies documented at [OpenShift AI Supported Configurations](https://access.redhat.com/articles/rhoai-supported-configs)
-
 * Teacher and Judge models with a serving endpoint
     * If already setup you will need the endpoint, api key, and any CA bundles if needed for each model
     * If setting up your own using these instructions, you will need additional multi-node A100s or L40s for each model
