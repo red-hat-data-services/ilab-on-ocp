@@ -20,6 +20,7 @@ USER default
 WORKDIR /opt/app-root/src
 
 LABEL name="odh-ml-pipelines-runtime-generic" \
+    com.redhat.component="odh-ml-pipelines-runtime-generic-container" \
     summary="Generic runtime image for pipeline tasks with embedded managed pipelines." \
     description="Generic runtime image for pipeline tasks with embedded managed pipelines." \
     summary="odh-ml-pipelines-runtime-generic" \
