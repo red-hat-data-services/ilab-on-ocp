@@ -59,7 +59,7 @@ setuptools-scm==7.1.0
     # via python-dateutil
 trove-classifiers==2025.1.15.22
     # via hatchling
-types-psutil==6.1.0.20241221
+types-psutil==7.0.0.20250218
     # via mypy
 types-setuptools==75.8.0.20250110
     # via mypy
