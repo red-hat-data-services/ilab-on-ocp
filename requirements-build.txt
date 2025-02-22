@@ -8,7 +8,7 @@ calver==2022.6.26
     # via trove-classifiers
 cython==3.0.11
     # via pyyaml
-flit-core==3.10.1
+flit-core==3.11.0
     # via
     #   click
     #   idna
