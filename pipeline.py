@@ -70,20 +70,36 @@ JUDGE_CA_CERT_PATH = "/tmp/cert"
     description="InstructLab pipeline",
 )
 def ilab_pipeline(
+    # Model I/O
+    input_model_uri: str,
+    output_oci_model_uri: str = "",
+    output_oci_registry_secret: str = None,
+    output_model_name: str = None,
+    output_model_version_name: str = None,
+    output_model_registry_name: str = None,
+    output_model_registry_namespace: str = "rhoai-model-registries",
+    output_modelcar_base_image: str = "registry.access.redhat.com/ubi9-micro:latest",
     # SDG phase
-    sdg_repo_url: str = "https://github.com/instructlab/taxonomy.git",
+    sdg_repo_url: str = None,
+    sdg_repo_secret: str = "taxonomy-repo-secret",
     sdg_repo_branch: Optional[str] = None,
     sdg_repo_pr: Optional[
         int
     ] = None,  # FIXME: https://issues.redhat.com/browse/RHOAIRFE-467
-    sdg_base_model: str = "s3://<BUCKET>/<PATH_TO_MODEL>",
+    sdg_teacher_secret: str = "teacher-secret",
+    sdg_base_model: str = None,
     sdg_scale_factor: int = 30,  # https://github.com/instructlab/instructlab/blob/v0.21.2/tests/testdata/default_config.yaml#L125
     sdg_pipeline: str = "/usr/share/instructlab/sdg/pipelines/agentic",  # https://github.com/instructlab/instructlab/blob/v0.21.2/tests/testdata/default_config.yaml#L122
     sdg_max_batch_len: int = 5000,  # https://github.com/instructlab/instructlab/blob/v0.21.2/tests/testdata/default_config.yaml#L334
     sdg_sample_size: float = 1.0,  # FIXME: Not present in default config. Not configurable upstream at this point, capability added via https://github.com/instructlab/sdg/pull/432
     # Training phase
-    train_nproc_per_node: int = 2,  # FIXME: Not present in default config. Arbitrary value chosen to demonstrate multi-node multi-gpu capabilities. Needs proper reference architecture justification.
-    train_nnodes: int = 2,  # FIXME: Not present in default config. Arbitrary value chosen to demonstrate multi-node multi-gpu capabilities. Needs proper reference architecture justification.
+    train_tolerations: Optional[list] = None,
+    train_node_selectors: Optional[dict] = None,
+    train_gpu_identifier: str = "nvidia.com/gpu",
+    train_gpu_per_worker: int = 2,  # FIXME: Not present in default config. Arbitrary value chosen to demonstrate multi-node multi-gpu capabilities. Needs proper reference architecture justification.
+    train_cpu_per_worker: str = "2",  # FIXME: Not present in default config. Arbitrary value chosen to demonstrate multi-node multi-gpu capabilities. Needs proper reference architecture justification.
+    train_memory_per_worker: str = "2Gi",  # FIXME: Not present in default config. Arbitrary value chosen to demonstrate multi-node multi-gpu capabilities. Needs proper reference architecture justification.
+    train_num_workers: int = 2,  # FIXME: Not present in default config. Arbitrary value chosen to demonstrate multi-node multi-gpu capabilities. Needs proper reference architecture justification.
     train_num_epochs_phase_1: int = 7,  # https://github.com/instructlab/instructlab/blob/v0.21.2/tests/testdata/default_config.yaml#L364
     train_num_epochs_phase_2: int = 10,  # https://github.com/instructlab/instructlab/blob/v0.21.2/tests/testdata/default_config.yaml#L377
     train_effective_batch_size_phase_1: int = 128,  # https://github.com/instructlab/instructlab/blob/v0.21.2/tests/testdata/default_config.yaml#L357
@@ -103,23 +119,42 @@ def ilab_pipeline(
     final_eval_few_shots: int = 5,  # https://github.com/instructlab/instructlab/blob/v0.21.2/tests/testdata/default_config.yaml#L56
     final_eval_batch_size: str = "auto",  # https://github.com/instructlab/instructlab/blob/v0.21.2/tests/testdata/default_config.yaml#L52
     final_eval_merge_system_user_message: bool = False,  # https://github.com/instructlab/instructlab/blob/v0.21.2/src/instructlab/model/evaluate.py#L474
+    # General Evaluation Inputs
+    eval_gpu_identifier: str = "nvidia.com/gpu",
+    eval_judge_secret: str = "judge-secret",
     # Other options
     k8s_storage_class_name: str = "standard",  # FIXME: https://github.com/kubeflow/pipelines/issues/11396, https://issues.redhat.com/browse/RHOAIRFE-470
 ):
     """InstructLab pipeline
 
     Args:
-        sdg_repo_url: SDG parameter. Points to a taxonomy git repository
+        input_model_uri: URI pointing to a model in an OCI or S3 registry.
+        output_oci_model_uri: The URI path to the OCI registry where the output model is pushed to.
+        output_oci_registry_secret: The secret key to use for OCI output registry.
+        output_model_name:  Model Registration parameter. The name of the model used during model registration.
+        output_model_version_name: Model Registration parameter. The version of the model used during model registration.
+        output_model_registry_name: Model Registration parameter. The name of the model registry used for model registration.
+        output_model_registry_namespace: Model Registration parameter. The namespace of the model used during model registration.
+        output_modelcar_base_image: The base image used for output model.
+
+        sdg_repo_url: SDG parameter. Points to a taxonomy git repository. E.g. "https://github.com/instructlab/taxonomy.git"
+        sdg_repo_secret: SDG parameter. The name of the k8s secret holding access credentials to the sdg_repo_url.
         sdg_repo_branch: SDG parameter. Points to a branch within the taxonomy git repository. If set, has priority over sdg_repo_pr
         sdg_repo_pr: SDG parameter. Points to a pull request against the taxonomy git repository
-        sdg_base_model: SDG parameter. LLM model used to generate the synthetic dataset
+        sdg_teacher_secret: SDG parameter. The name of the k8s secret key holding access credentials to the teacher server.
+        sdg_base_model: SDG parameter. LLM model used to generate the synthetic dataset. E.g. "s3://<BUCKET>/<PATH_TO_MODEL>"
         sdg_scale_factor: SDG parameter. The total number of instructions to be generated.
         sdg_pipeline: SDG parameter. Data generation pipeline to use. Available: 'simple', 'full', or a valid path to a directory of pipeline workflow YAML files. Note that 'full' requires a larger teacher model, Mixtral-8x7b.
         sdg_max_batch_len: SDG parameter. Maximum tokens per gpu for each batch that will be handled in a single step.
         sdg_sample_size: SDG parameter. Represents the sdg skills recipe sampling size as percentage in decimal form.
 
-        train_nproc_per_node: Training parameter. Number of GPUs per each node/worker to use for training.
-        train_nnodes: Training parameter. Number of nodes/workers to train on.
+        train_tolerations: Training parameter. List of tolerations applied to training pods.
+        train_node_selectors: Training parameter. A JSON containing node selectors applied to training pods.
+        train_gpu_identifier: Training parameter. The GPU type used for training pods, e.g. nvidia.com/gpu
+        train_gpu_per_worker: Training parameter. Number of GPUs per each node/worker to use for training.
+        train_cpu_per_worker: Training parameter. Number of CPUs per each node/worker to use for training.
+        train_memory_per_worker: Training parameter. Memory per GPU per each node/worker to use for training.
+        train_num_workers: Training parameter. Number of nodes/workers to train on.
         train_num_epochs_phase_1: Training parameter for in Phase 1. Number of epochs to run training.
         train_num_epochs_phase_2: Training parameter for in Phase 2. Number of epochs to run training.
         train_effective_batch_size_phase_1: Training parameter for in Phase 1. The number of samples in a batch that the model should see before its parameters are updated.
@@ -139,6 +174,9 @@ def ilab_pipeline(
         final_eval_few_shots: Final model evaluation parameter for MMLU. Number of question-answer pairs provided in the context preceding the question used for evaluation.
         final_eval_batch_size: Final model evaluation parameter for MMLU. Batch size for evaluation. Valid values are a positive integer or 'auto' to select the largest batch size that will fit in memory.
         final_eval_merge_system_user_message: Final model evaluation parameter for MT Bench Branch. Boolean indicating whether to merge system and user messages (required for Mistral based judges)
+
+        eval_gpu_identifier: General evaluation parameter. The GPU type used for training pods, e.g. nvidia.com/gpu
+        eval_judge_secret: General evaluation parameter: The name of the k8s secret key holding access credentials to the judge server.
 
         k8s_storage_class_name: A Kubernetes StorageClass name for persistent volumes. Selected StorageClass must support RWX PersistentVolumes.
     """
@@ -285,8 +323,8 @@ def ilab_pipeline(
         output_pvc_name=output_pvc_task.output,
         phase_num=1,
         base_image=RHELAI_IMAGE,
-        nproc_per_node=train_nproc_per_node,
-        nnodes=train_nnodes,
+        nproc_per_node=train_gpu_per_worker,
+        nnodes=train_num_workers,
         num_epochs=train_num_epochs_phase_1,
         effective_batch_size=train_effective_batch_size_phase_1,
         learning_rate=train_learning_rate_phase_1,
@@ -306,8 +344,8 @@ def ilab_pipeline(
         output_pvc_name=output_pvc_task.output,
         phase_num=2,
         base_image=RHELAI_IMAGE,
-        nproc_per_node=train_nproc_per_node,
-        nnodes=train_nnodes,
+        nproc_per_node=train_gpu_per_worker,
+        nnodes=train_num_workers,
         num_epochs=train_num_epochs_phase_2,
         effective_batch_size=train_effective_batch_size_phase_2,
         learning_rate=train_learning_rate_phase_2,
