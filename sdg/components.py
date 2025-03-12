@@ -22,21 +22,21 @@ def git_clone_op(
             # Increase logging verbosity
             set -x &&
 
-            # Add TLS Parameters if CA Cert exists and is non-zero size
-            ADDITIONAL_CLONE_PARAMS=""
+            # Set Preferred CA Cert
             if [ -s "$TAXONOMY_CA_CERT_PATH" ]; then
-                ADDITIONAL_CLONE_PARAMS="-c http.sslVerify=true -c http.sslCAInfo=$TAXONOMY_CA_CERT_PATH"
+                export GIT_SSL_NO_VERIFY=false
+                export GIT_SSL_CAINFO="$TAXONOMY_CA_CERT_PATH"
+            elif [ ! -z "$SSL_CERT_DIR" ]; then
+                export GIT_SSL_NO_VERIFY=false
+                export GIT_SSL_CAPATH="$SSL_CERT_DIR"
+            elif [ -s "$SSL_CERT_FILE" ]; then
+                export GIT_SSL_NO_VERIFY=false
+                export GIT_SSL_CAINFO="$SSL_CERT_FILE"
             fi
 
             # Clone Taxonomy Repo
-            git clone $ADDITIONAL_CLONE_PARAMS {repo_url} {taxonomy_path} &&
+            git clone {repo_url} {taxonomy_path} &&
             cd {taxonomy_path} &&
-
-            # Run additional configuration if TLS certs provided
-            if [ -s "$TAXONOMY_CA_CERT_PATH" ]; then
-                git config http.sslVerify true &&
-                git config http.sslCAInfo $TAXONOMY_CA_CERT_PATH
-            fi &&
 
             # Checkout and use taxonomy repo branch or PR if specified
             if [ -n "{repo_branch}" ]; then
@@ -53,6 +53,7 @@ def git_clone_op(
 def sdg_op(
     num_instructions_to_generate: int,
     pipeline: str,
+    tokenizer_model: dsl.Input[dsl.Model],
     repo_branch: Optional[str],
     repo_pr: Optional[int],
     taxonomy_path: str = "/data/taxonomy",
@@ -64,6 +65,7 @@ def sdg_op(
 ):
     import base64
     import os
+    import os.path
     import re
     import shutil
     import subprocess
@@ -150,6 +152,16 @@ def sdg_op(
         if match:
             return match.group(1)  # Extracted host
         raise ValueError(f"Invalid SSH repository URL: {repo_url}")
+
+    tokenizer_model_path = tokenizer_model.path
+    if tokenizer_model_path.startswith("oci://"):
+        # Handle where the KFP SDK is <2.12.0.
+        escaped_uri = tokenizer_model_path[len("oci://") :].replace("/", "\\/")
+        tokenizer_model_path = os.path.join("/oci", escaped_uri, "models")
+
+    # A hack because InstructLab assumes the value for model_name is a valid path and the name of the model.
+    os.symlink(tokenizer_model_path, os.path.join(tempfile.gettempdir(), "mixtral"))
+    os.chdir(tempfile.gettempdir())
 
     if not taxonomy_repo_secret:
         username = os.getenv("GIT_USERNAME")
@@ -277,23 +289,36 @@ def sdg_op(
 
     if sdg_secret_name is None:
         api_key = os.getenv("api_key")
-        model = os.getenv("model")
         endpoint = os.getenv("endpoint")
     else:
         print("SDG Teacher secret specified, fetching...")
-        api_key, model, endpoint = fetch_secret(
-            sdg_secret_name, ["api_token", "model_name", "endpoint"]
-        )
+        api_key, endpoint = fetch_secret(sdg_secret_name, ["api_token", "endpoint"])
         print("SDG Teacher secret data retrieved.")
 
     sdg_ca_cert_path = os.getenv("SDG_CA_CERT_PATH")
-    use_tls = os.path.exists(sdg_ca_cert_path) and (
-        os.path.getsize(sdg_ca_cert_path) > 0
+    dsp_ca_cert_path = os.getenv("SSL_CERT_FILE")
+    dsp_ca_cert_dir = os.getenv("SSL_CERT_DIR")
+
+    dsp_cert_dir_defined = dsp_ca_cert_dir is not None
+    dsp_ca_exists = (
+        dsp_ca_cert_path is not None
+        and os.path.isfile(dsp_ca_cert_path)
+        and (os.path.getsize(dsp_ca_cert_path) > 0)
     )
+    sdg_ca_exists = (
+        sdg_ca_cert_path is not None
+        and os.path.isfile(sdg_ca_cert_path)
+        and (os.path.getsize(sdg_ca_cert_path) > 0)
+    )
+
+    use_tls = dsp_cert_dir_defined or dsp_ca_exists or sdg_ca_exists
+
     if use_tls:
         import httpx
 
-        custom_http_client = httpx.Client(verify=sdg_ca_cert_path)
+        # Use SDG CA Cert if explicitly defined, otherwise use system default CA Certs
+        ca_cert_path = sdg_ca_cert_path if sdg_ca_exists else True
+        custom_http_client = httpx.Client(verify=ca_cert_path)
         client = openai.OpenAI(
             base_url=endpoint, api_key=api_key, http_client=custom_http_client
         )
@@ -322,7 +347,7 @@ def sdg_op(
             output_dir=sdg_path,
             taxonomy=taxonomy_path,
             taxonomy_base=taxonomy_base,
-            model_name=model,
+            model_name="mixtral",
             pipeline=pipeline,
             chunk_word_count=1000,
             server_ctx_size=4096,
@@ -346,6 +371,8 @@ def sdg_op(
                 sampling_size=sdg_sampling_size, skills_recipe=skills_recipe
             )
         except PermissionError:
+            # TODO(mprahl): When upgrading to RHEL AI 1.4, replace all this with:
+            # https://github.com/instructlab/sdg/blob/v0.7.1/docs/examples/mix_datasets/example_mixing.py
             print("Failed to set precomputed skills data ratio: Permission denied")
             print("Attempting to move default data recipes to temporary directory")
 
@@ -367,6 +394,9 @@ def sdg_op(
                 ]
                 temp_pipeline_dir = os.path.join(temp_dir, "pipeline")
                 os.mkdir(temp_pipeline_dir)
+                temp_models_dir = os.path.join(temp_dir, "instructlab", "sdg", "models")
+                os.makedirs(temp_models_dir, exist_ok=True)
+
                 for d in data_dirs:
                     pipeline_path = os.path.join(d, "pipelines", pipeline)
                     if os.path.exists(pipeline_path):
@@ -374,6 +404,17 @@ def sdg_op(
                             pipeline_path,
                             temp_pipeline_dir,
                             dirs_exist_ok=True,
+                        )
+                        break
+
+                # The docling SDG model is also needed, so just copy the models config which has paths to the
+                # default models.
+                for d in data_dirs:
+                    models_config_path = os.path.join(d, "models", "config.yaml")
+                    if os.path.exists(models_config_path):
+                        shutil.copy(
+                            models_config_path,
+                            os.path.join(temp_models_dir, "config.yaml"),
                         )
                         break
 
@@ -404,7 +445,7 @@ def sdg_op(
                         output_dir=sdg_path,
                         taxonomy=taxonomy_path,
                         taxonomy_base=taxonomy_base,
-                        model_name=model,
+                        model_name="mixtral",
                         pipeline=pipeline,
                         chunk_word_count=1000,
                         server_ctx_size=4096,
