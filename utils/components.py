@@ -315,6 +315,7 @@ def test_model_connection(secret_name: str):
     import json
     import os
     import sys
+    import textwrap
     import time
 
     import requests
@@ -366,18 +367,56 @@ def test_model_connection(secret_name: str):
             print(f"Model Server {model_name} is not available. Attempt {i}/3...")
             time.sleep(5)
         else:
-            print(f"""
+            print(
+                textwrap.dedent(f"""\
             ################### INFO #######################
             # Model Server {model_name} is up and running. #
-            ################################################
+            ################################################\
             """)
+            )
             return
-    print(f"""
+    print(
+        textwrap.dedent(f"""\
     ############################################ ERROR ####################################################
     # Model Server {model_name} is unavailable. Ensure the model is up and it is ready to serve requests. #
-    #######################################################################################################
+    #######################################################################################################\
     """)
+    )
     sys.exit(1)
+
+
+# sdg_num_workers directly maps to num_cpus in the SDG phase of InstructLab
+@dsl.component(base_image=RUNTIME_GENERIC_IMAGE)
+def test_sdg_params(sdg_batch_size: int, sdg_num_workers: int):
+    import sys
+    import textwrap
+
+    if (
+        sdg_batch_size < 1
+        or sdg_batch_size > 4096
+        or sdg_num_workers < 2
+        or sdg_num_workers > 10
+    ):
+        print(
+            textwrap.dedent(
+                f"""\
+                ############################################## ERROR ##############################################
+                # sdg_batch_size must be a value between 1-4096 and sdg_num_workers must be a value between 1-10  #
+                ###################################################################################################\
+                """
+            )
+        )
+        sys.exit(1)
+
+    print(
+        textwrap.dedent(
+            f"""\
+            ############# INFO #############
+            # The SDG parameters seem okay #
+            ################################\
+            """
+        )
+    )
 
 
 @dsl.component(base_image=RUNTIME_GENERIC_IMAGE)
@@ -387,17 +426,20 @@ def test_model_registry(
     model_version: Optional[str],
 ):
     import sys
+    import textwrap
     import urllib
 
     from model_registry import ModelRegistry
     from model_registry.exceptions import StoreError
 
     if not model_registry_endpoint:
-        print(f"""
+        print(
+            textwrap.dedent(f"""\
         ########################### INFO ##############################
         # Model Registry endpoint is not provided. Skipping this step #
-        ###############################################################
+        ###############################################################\
         """)
+        )
         return
 
     try:
@@ -444,24 +486,29 @@ def test_model_registry(
     except StoreError as store:
         # The model has no versions registered.
         # Do nothing, just to avoid this exception to return failure
-        print(f"""
+        print(
+            textwrap.dedent(f"""\
         ########### INFO ##############
         # Model Registry is available #
-        ###############################
+        ###############################\
         """)
+        )
         sys.exit(0)
     except Exception as e:
-        print(f"""
+        print(
+            textwrap.dedent(f"""\
         ############# ERROR ###############
         # Model Registry is not available #
-        ###################################
+        ###################################\
         """)
+        )
         raise
 
 
 @dsl.component(base_image=RUNTIME_GENERIC_IMAGE)
 def test_training_operator():
     import sys
+    import textwrap
 
     from kubernetes import client, config
     from kubernetes.client.rest import ApiException
@@ -483,17 +530,21 @@ def test_training_operator():
             api_response = api_instance.list_namespaced_custom_object(
                 group, version, namespace, plural
             )
-            print("""
+            print(
+                textwrap.dedent("""\
             ######################### INFO ###########################
             # Kubeflow Training Operator PyTorchJob CRD is available #
-            ##########################################################
+            ##########################################################\
             """)
+            )
         except ApiException as e:
-            print("""
+            print(
+                textwrap.dedent("""\
             #################################################### ERROR ######################################################################
             # Kubeflow Training Operator PyTorchJob CRD is unavailable. Ensure your OpenShift AI installation has Training Operator enabled #
-            #################################################################################################################################
+            #################################################################################################################################\
             """)
+            )
             sys.exit(1)
 
 
@@ -502,6 +553,7 @@ def test_oci_model(output_oci_model_uri: str, output_oci_registry_secret: str):
     import base64
     import json
     import sys
+    import textwrap
 
     from kubernetes import client, config
     from kubernetes.client.rest import ApiException
@@ -513,11 +565,13 @@ def test_oci_model(output_oci_model_uri: str, output_oci_registry_secret: str):
     config.load_incluster_config()
 
     if output_oci_model_uri is None:
-        print(f"""
+        print(
+            textwrap.dedent(f"""\
         ############################## INFO ##################################
         # Parameter output_oci_model_uri not provided. Skipping this step... #
-        ######################################################################
+        ######################################################################\
         """)
+        )
         sys.exit(0)
 
     # Extract from sdg_base_model parameter the registry name
@@ -535,34 +589,42 @@ def test_oci_model(output_oci_model_uri: str, output_oci_registry_secret: str):
                 docker_config_json = json.loads(
                     base64.b64decode(secret.data[".dockerconfigjson"]).decode("utf-8")
                 )
-                print(f"""
+                print(
+                    textwrap.dedent(f"""\
                 ############## INFO #################
                 # OCI Secret has auth token present #
-                #####################################
+                #####################################\
                 """)
+                )
             elif secret.type == "kubernetes.io/dockercfg":
                 # handle authentication if secret provided is kubernetes.io/dockercfg
                 dockercfg_json = json.loads(
                     base64.b64decode(secret.data[".dockercfg"]).decode("utf-8")
                 )
-                print(f"""
+                print(
+                    textwrap.dedent(f"""\
                 ############## INFO #################
                 # OCI Secret has auth token present #
-                #####################################
+                #####################################\
                 """)
+                )
         except ApiException as e:
-            print(f"""
-            ############################################## ERROR #################################################################
+            print(
+                textwrap.dedent(f"""\
+            ################################################# ERROR ###################################################################
             # Secret {output_oci_registry_secret} does not exist. Ensure you created a secret with this name in namespace {namespace} #
-            ######################################################################################################################
+            ###########################################################################################################################\
             """)
+            )
             sys.exit(1)
         except Exception as e:
-            print(f"""
+            print(
+                textwrap.dedent(f"""\
             ################## ERROR ##################
             # Failed to check oci model and/or secret #
-            ###########################################
+            ###########################################\
             """)
+            )
             raise
 
 
@@ -605,6 +667,8 @@ def prerequisites_check_op(
     output_oci_registry_secret: str,
     eval_judge_secret: str,
     sdg_teacher_secret: str,
+    sdg_batch_size: int,
+    sdg_num_workers: int,
     output_oci_model_uri: str,
     output_model_registry_api_url: str,
     output_model_name: str,
@@ -657,3 +721,9 @@ def prerequisites_check_op(
     # Validate git repository
     test_taxonomy_repo_op = test_taxonomy_repo(sdg_repo_url=sdg_repo_url)
     test_taxonomy_repo_op.set_caching_options(False)
+
+    # Validate the SDG configuration
+    test_sdg_params_op = test_sdg_params(
+        sdg_batch_size=sdg_batch_size, sdg_num_workers=sdg_num_workers
+    )
+    test_sdg_params_op.set_caching_options(False)
