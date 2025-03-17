@@ -182,17 +182,28 @@ def sdg_op(
         print("No credentials provided for taxonomy repo, assuming public repo...")
 
     ca_cert_path = os.getenv("SDG_CA_CERT_PATH")
+    ssl_cert_dir = os.getenv("SSL_CERT_DIR")
+    ssl_cert_file = os.getenv("SSL_CERT_FILE")
     env = os.environ.copy()
 
-    # Todo(HumairAK): should be platform cert
     # Set custom CA certificate if provided
-    if ca_cert_path:
-        print(f"SSL CA Info detected. ca cert path: {ca_cert_path}")
+    # Consume this in the process execution environment
+    # This is required for read_taxonomy calls which
+    # Perform nested calls to git clones.
+    if ca_cert_path and os.path.exists(ca_cert_path):
+        print(f"CA detected at {ca_cert_path}")
         env["GIT_SSL_CAINFO"] = ca_cert_path
-        # Consume this in the process execution environment
-        # This is required for read_taxonomy calls which
-        # Perform nested calls to git clones.
         os.environ["GIT_SSL_CAINFO"] = ca_cert_path
+    elif ssl_cert_dir and os.path.exists(ssl_cert_dir):
+        print(f"CA detected at {ssl_cert_dir}")
+        env["GIT_SSL_CAPATH"] = ssl_cert_dir
+        os.environ["GIT_SSL_CAPATH"] = ca_cert_path
+    elif ssl_cert_file and os.path.exists(ssl_cert_file):
+        print(f"CA detected at {ssl_cert_file}")
+        env["GIT_SSL_CAINFO"] = ssl_cert_file
+        os.environ["GIT_SSL_CAINFO"] = ssl_cert_file
+    else:
+        print("No CA detected. Using the CA bundle in the container image.")
 
     git_credentials_path = ""
     ssh_key_path = ""

@@ -226,7 +226,9 @@ def ilab_pipeline(
     )
     sdg_task.set_env_variable("HOME", "/tmp")
     sdg_task.set_env_variable("HF_HOME", "/tmp")
-    use_config_map_as_volume(sdg_task, TEACHER_CONFIG_MAP, mount_path=SDG_CA_CERT_PATH)
+    use_config_map_as_volume(
+        sdg_task, TEACHER_CONFIG_MAP, mount_path=SDG_CA_CERT_PATH, optional=True
+    )
     sdg_task.set_env_variable(
         SDG_CA_CERT_ENV_VAR_NAME, os.path.join(SDG_CA_CERT_PATH, SDG_CA_CERT_CM_KEY)
     )

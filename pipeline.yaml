@@ -1893,15 +1893,22 @@ deploymentSpec:
           \ via env or secret\n    # Assume the repo is public\n    if not username\
           \ or ssh_key:\n        print(\"No credentials provided for taxonomy repo,\
           \ assuming public repo...\")\n\n    ca_cert_path = os.getenv(\"SDG_CA_CERT_PATH\"\
-          )\n    env = os.environ.copy()\n\n    # Todo(HumairAK): should be platform\
-          \ cert\n    # Set custom CA certificate if provided\n    if ca_cert_path:\n\
-          \        print(f\"SSL CA Info detected. ca cert path: {ca_cert_path}\")\n\
-          \        env[\"GIT_SSL_CAINFO\"] = ca_cert_path\n        # Consume this\
-          \ in the process execution environment\n        # This is required for read_taxonomy\
-          \ calls which\n        # Perform nested calls to git clones.\n        os.environ[\"\
-          GIT_SSL_CAINFO\"] = ca_cert_path\n\n    git_credentials_path = \"\"\n  \
-          \  ssh_key_path = \"\"\n    # Username/PAT takes precedence over ssh\n \
-          \   if username and token:\n        print(\"Configuring Git Credentials...\"\
+          )\n    ssl_cert_dir = os.getenv(\"SSL_CERT_DIR\")\n    ssl_cert_file = os.getenv(\"\
+          SSL_CERT_FILE\")\n    env = os.environ.copy()\n\n    # Set custom CA certificate\
+          \ if provided\n    # Consume this in the process execution environment\n\
+          \    # This is required for read_taxonomy calls which\n    # Perform nested\
+          \ calls to git clones.\n    if ca_cert_path and os.path.exists(ca_cert_path):\n\
+          \        print(f\"CA detected at {ca_cert_path}\")\n        env[\"GIT_SSL_CAINFO\"\
+          ] = ca_cert_path\n        os.environ[\"GIT_SSL_CAINFO\"] = ca_cert_path\n\
+          \    elif ssl_cert_dir and os.path.exists(ssl_cert_dir):\n        print(f\"\
+          CA detected at {ssl_cert_dir}\")\n        env[\"GIT_SSL_CAPATH\"] = ssl_cert_dir\n\
+          \        os.environ[\"GIT_SSL_CAPATH\"] = ca_cert_path\n    elif ssl_cert_file\
+          \ and os.path.exists(ssl_cert_file):\n        print(f\"CA detected at {ssl_cert_file}\"\
+          )\n        env[\"GIT_SSL_CAINFO\"] = ssl_cert_file\n        os.environ[\"\
+          GIT_SSL_CAINFO\"] = ssl_cert_file\n    else:\n        print(\"No CA detected.\
+          \ Using the CA bundle in the container image.\")\n\n    git_credentials_path\
+          \ = \"\"\n    ssh_key_path = \"\"\n    # Username/PAT takes precedence over\
+          \ ssh\n    if username and token:\n        print(\"Configuring Git Credentials...\"\
           )\n        # Parse the domain from the repository URL\n        parsed_url\
           \ = urllib.parse.urlparse(repo_url)\n        git_server = parsed_url.netloc\n\
           \n        # Set up Git credential helper\n        exec_cmd([\"git\", \"\
@@ -3533,7 +3540,7 @@ platforms:
           configMapAsVolume:
           - configMapName: teacher-server
             mountPath: /tmp/cert
-            optional: false
+            optional: true
           pvcMount:
           - mountPath: /data
             taskOutputParameter:
