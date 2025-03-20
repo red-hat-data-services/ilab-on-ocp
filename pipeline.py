@@ -1,7 +1,6 @@
 # type: ignore
 # pylint: disable=no-value-for-parameter,import-outside-toplevel,no-member
 
-import os
 from typing import Optional
 
 import click
@@ -10,7 +9,6 @@ from kfp.kubernetes import (
     CreatePVC,
     DeletePVC,
     mount_pvc,
-    use_config_map_as_volume,
     use_secret_as_env,
     use_secret_as_volume,
 )
@@ -37,27 +35,13 @@ from utils import (
 )
 from utils.components import prerequisites_check_op
 from utils.consts import (
-    JUDGE_CONFIG_MAP,
     RHELAI_IMAGE,
     RUNTIME_GENERIC_IMAGE,
-    TEACHER_CONFIG_MAP,
 )
 
 PIPELINE_FILE_NAME = "pipeline.yaml"
 IMPORTER_PIPELINE_FILE_NAME = "importer-pipeline.yaml"
 DEFAULT_REPO_URL = "https://github.com/instructlab/taxonomy.git"
-
-TAXONOMY_CA_CERT_CM_KEY = "taxonomy-ca.crt"
-TAXONOMY_CA_CERT_ENV_VAR_NAME = "TAXONOMY_CA_CERT_PATH"
-TAXONOMY_CA_CERT_PATH = "/tmp/cert"
-
-SDG_CA_CERT_CM_KEY = "ca.crt"
-SDG_CA_CERT_ENV_VAR_NAME = "SDG_CA_CERT_PATH"
-SDG_CA_CERT_PATH = "/tmp/cert"
-
-JUDGE_CA_CERT_CM_KEY = "ca.crt"
-JUDGE_CA_CERT_ENV_VAR_NAME = "JUDGE_CA_CERT_PATH"
-JUDGE_CA_CERT_PATH = "/tmp/cert"
 
 
 @dsl.pipeline(
@@ -223,12 +207,6 @@ def ilab_pipeline(
     )
     sdg_task.set_env_variable("HOME", "/tmp")
     sdg_task.set_env_variable("HF_HOME", "/tmp")
-    use_config_map_as_volume(
-        sdg_task, TEACHER_CONFIG_MAP, mount_path=SDG_CA_CERT_PATH, optional=True
-    )
-    sdg_task.set_env_variable(
-        SDG_CA_CERT_ENV_VAR_NAME, os.path.join(SDG_CA_CERT_PATH, SDG_CA_CERT_CM_KEY)
-    )
 
     mount_pvc(
         task=sdg_task,
@@ -402,14 +380,6 @@ def ilab_pipeline(
     run_mt_bench_task.set_caching_options(False)
     run_mt_bench_task.after(training_phase_2)
 
-    use_config_map_as_volume(
-        run_mt_bench_task, JUDGE_CONFIG_MAP, mount_path=JUDGE_CA_CERT_PATH
-    )
-    run_mt_bench_task.set_env_variable(
-        JUDGE_CA_CERT_ENV_VAR_NAME,
-        os.path.join(JUDGE_CA_CERT_PATH, JUDGE_CA_CERT_CM_KEY),
-    )
-
     # uncomment if updating image with same tag
     # set_image_pull_policy(run_mt_bench_task, "Always")
 
@@ -444,14 +414,6 @@ def ilab_pipeline(
 
     # uncomment if updating image with same tag
     # set_image_pull_policy(final_eval_task, "Always")
-
-    use_config_map_as_volume(
-        final_eval_task, JUDGE_CONFIG_MAP, mount_path=JUDGE_CA_CERT_PATH
-    )
-    final_eval_task.set_env_variable(
-        JUDGE_CA_CERT_ENV_VAR_NAME,
-        os.path.join(JUDGE_CA_CERT_PATH, JUDGE_CA_CERT_CM_KEY),
-    )
 
     final_eval_task.after(run_mt_bench_task)
     final_eval_task.set_accelerator_type(eval_gpu_identifier)
