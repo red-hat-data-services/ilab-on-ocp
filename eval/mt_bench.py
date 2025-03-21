@@ -22,6 +22,7 @@ def run_mt_bench_op(
     import base64
     import json
     import os
+    import ssl
     import subprocess
 
     import httpx
@@ -67,6 +68,9 @@ def run_mt_bench_op(
                 f"Error fetching secret: {response.status_code} {response.text}"
             )
 
+    # Use the default SSL context since it leverages OpenSSL to use the correct CA bundle.
+    judge_http_client = httpx.Client(verify=ssl.create_default_context())
+
     if judge_secret_name is None:
         judge_api_key = os.getenv("JUDGE_API_KEY", "")
         judge_model_name = os.getenv("JUDGE_NAME")
@@ -77,28 +81,6 @@ def run_mt_bench_op(
             judge_secret_name, ["api_token", "model_name", "endpoint"]
         )
         print("Eval Judge secret data retrieved.")
-
-    judge_ca_cert_path = os.getenv("JUDGE_CA_CERT_PATH")
-    dsp_ca_cert_path = os.getenv("SSL_CERT_FILE")
-    dsp_ca_cert_dir = os.getenv("SSL_CERT_DIR")
-
-    dsp_cert_dir_defined = dsp_ca_cert_dir is not None
-    dsp_ca_exists = (
-        dsp_ca_cert_path is not None
-        and os.path.isfile(dsp_ca_cert_path)
-        and (os.path.getsize(dsp_ca_cert_path) > 0)
-    )
-    judge_ca_exists = (
-        judge_ca_cert_path is not None
-        and os.path.isfile(judge_ca_cert_path)
-        and (os.path.getsize(judge_ca_cert_path) > 0)
-    )
-
-    use_tls = dsp_cert_dir_defined or dsp_ca_exists or judge_ca_exists
-
-    # Use Judge CA Cert if explicitly defined, otherwise use system default CA Certs
-    ca_cert_path = judge_ca_cert_path if judge_ca_exists else True
-    judge_http_client = httpx.Client(verify=ca_cert_path) if use_tls else None
 
     def launch_vllm(
         model_path: str, gpu_count: int, retries: int = 120, delay: int = 10
