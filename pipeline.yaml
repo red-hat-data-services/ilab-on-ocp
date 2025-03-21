@@ -994,7 +994,7 @@ deploymentSpec:
     exec-importer:
       importer:
         artifactUri:
-          constant: oci://quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:10fe95cd2e6b85c865249d26e99571fc9a9897a75070c02fa5dcfdb3252d3eb2
+          constant: oci://quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:b53a607cd4efa86a594da68586613e916ed4b7c626e8a7e793d75e0bd15e815a
         typeSchema:
           schemaTitle: system.Model
           schemaVersion: 0.0.1
@@ -1040,7 +1040,7 @@ deploymentSpec:
           \ f)\n        print(f\"Copying {src} to {dest}\")\n        if os.path.isdir(src):\n\
           \            shutil.copytree(src, dest)\n        else:\n            shutil.copy(src,\
           \ dest)\n\n"
-        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:10fe95cd2e6b85c865249d26e99571fc9a9897a75070c02fa5dcfdb3252d3eb2
+        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:b53a607cd4efa86a594da68586613e916ed4b7c626e8a7e793d75e0bd15e815a
     exec-pvc-to-mmlu-branch-op:
       container:
         args:
@@ -1371,26 +1371,17 @@ deploymentSpec:
           ,\n    sdg_path: str = \"/input/sdg\",\n    mmlu_branch_output_path: str\
           \ = \"/output/mmlu_branch\",\n    mt_bench_branch_output_path: str = \"\
           /output/mt_bench_branch\",\n    judge_secret_name: str = None,\n):\n   \
-          \ import base64\n    import json\n    import os\n    import subprocess\n\
-          \    from pathlib import Path\n\n    import httpx\n    import requests\n\
-          \    import torch\n    from instructlab.eval.mmlu import MMLUBranchEvaluator\n\
+          \ import base64\n    import json\n    import os\n    import ssl\n    import\
+          \ subprocess\n    from pathlib import Path\n\n    import httpx\n    import\
+          \ requests\n    import torch\n    from instructlab.eval.mmlu import MMLUBranchEvaluator\n\
           \    from instructlab.eval.mt_bench import MTBenchBranchEvaluator\n    from\
           \ instructlab.model.evaluate import qa_pairs_to_qna_to_avg_scores, sort_score\n\
-          \n    judge_ca_cert_path = os.getenv(\"JUDGE_CA_CERT_PATH\")\n    dsp_ca_cert_path\
-          \ = os.getenv(\"SSL_CERT_FILE\")\n    dsp_ca_cert_dir = os.getenv(\"SSL_CERT_DIR\"\
-          )\n\n    dsp_cert_dir_defined = dsp_ca_cert_dir is not None\n    dsp_ca_exists\
-          \ = (\n        dsp_ca_cert_path is not None\n        and os.path.isfile(dsp_ca_cert_path)\n\
-          \        and (os.path.getsize(dsp_ca_cert_path) > 0)\n    )\n    judge_ca_exists\
-          \ = (\n        judge_ca_cert_path is not None\n        and os.path.isfile(judge_ca_cert_path)\n\
-          \        and (os.path.getsize(judge_ca_cert_path) > 0)\n    )\n\n    use_tls\
-          \ = dsp_cert_dir_defined or dsp_ca_exists or judge_ca_exists\n\n    # Use\
-          \ Judge CA Cert if explicitly defined, otherwise use system default CA Certs\n\
-          \    ca_cert_path = judge_ca_cert_path if judge_ca_exists else True\n  \
-          \  judge_http_client = httpx.Client(verify=ca_cert_path) if use_tls else\
-          \ None\n\n    print(\"Starting Final Eval...\")\n\n    def launch_vllm(\n\
-          \        model_path: str, gpu_count: int, retries: int = 120, delay: int\
-          \ = 10\n    ) -> tuple:\n        import subprocess\n        import sys\n\
-          \        import time\n\n        import requests\n        from instructlab.model.backends.common\
+          \n    # Use the default SSL context since it leverages OpenSSL to use the\
+          \ correct CA bundle.\n    judge_http_client = httpx.Client(verify=ssl.create_default_context())\n\
+          \n    print(\"Starting Final Eval...\")\n\n    def launch_vllm(\n      \
+          \  model_path: str, gpu_count: int, retries: int = 120, delay: int = 10\n\
+          \    ) -> tuple:\n        import subprocess\n        import sys\n      \
+          \  import time\n\n        import requests\n        from instructlab.model.backends.common\
           \ import free_tcp_ipv4_port\n\n        free_port = free_tcp_ipv4_port(\"\
           127.0.0.1\")\n        port = str(free_port)\n        vllm_server = f\"http://127.0.0.1:{port}/v1\"\
           \n\n        command = [\n            sys.executable,\n            \"-m\"\
@@ -1634,8 +1625,6 @@ deploymentSpec:
           value: /tmp
         - name: HF_HOME
           value: /tmp
-        - name: JUDGE_CA_CERT_PATH
-          value: /tmp/cert/ca.crt
         image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:c656c74338e3d59bf265e4b2fa9c01a69c8212992fa6d4511aef52a441506e68
         resources:
           accelerator:
@@ -1667,8 +1656,8 @@ deploymentSpec:
           \    max_workers: str,\n    models_folder: str,\n    output_path: str =\
           \ \"/output/mt_bench_data.json\",\n    judge_secret_name: str = None,\n\
           ) -> NamedTuple(\"outputs\", best_model=str, best_score=float):\n    import\
-          \ base64\n    import json\n    import os\n    import subprocess\n\n    import\
-          \ httpx\n    import requests\n    import torch\n    from instructlab.eval.mt_bench\
+          \ base64\n    import json\n    import os\n    import ssl\n    import subprocess\n\
+          \n    import httpx\n    import requests\n    import torch\n    from instructlab.eval.mt_bench\
           \ import MTBenchEvaluator\n\n    def fetch_secret(secret_name, keys):\n\
           \        # Kubernetes API server inside the cluster\n        K8S_API_SERVER\
           \ = \"https://kubernetes.default.svc\"\n        NAMESPACE_PATH = \"/var/run/secrets/kubernetes.io/serviceaccount/namespace\"\
@@ -1690,32 +1679,22 @@ deploymentSpec:
           \             if key in secret_data:\n                    values.append(base64.b64decode(secret_data[key]).decode())\n\
           \            return values\n        else:\n            raise RuntimeError(\n\
           \                f\"Error fetching secret: {response.status_code} {response.text}\"\
-          \n            )\n\n    if judge_secret_name is None:\n        judge_api_key\
-          \ = os.getenv(\"JUDGE_API_KEY\", \"\")\n        judge_model_name = os.getenv(\"\
-          JUDGE_NAME\")\n        judge_endpoint = os.getenv(\"JUDGE_ENDPOINT\")\n\
-          \    else:\n        print(\"Eval Judge secret specified, fetching...\")\n\
-          \        judge_api_key, judge_model_name, judge_endpoint = fetch_secret(\n\
-          \            judge_secret_name, [\"api_token\", \"model_name\", \"endpoint\"\
-          ]\n        )\n        print(\"Eval Judge secret data retrieved.\")\n\n \
-          \   judge_ca_cert_path = os.getenv(\"JUDGE_CA_CERT_PATH\")\n    dsp_ca_cert_path\
-          \ = os.getenv(\"SSL_CERT_FILE\")\n    dsp_ca_cert_dir = os.getenv(\"SSL_CERT_DIR\"\
-          )\n\n    dsp_cert_dir_defined = dsp_ca_cert_dir is not None\n    dsp_ca_exists\
-          \ = (\n        dsp_ca_cert_path is not None\n        and os.path.isfile(dsp_ca_cert_path)\n\
-          \        and (os.path.getsize(dsp_ca_cert_path) > 0)\n    )\n    judge_ca_exists\
-          \ = (\n        judge_ca_cert_path is not None\n        and os.path.isfile(judge_ca_cert_path)\n\
-          \        and (os.path.getsize(judge_ca_cert_path) > 0)\n    )\n\n    use_tls\
-          \ = dsp_cert_dir_defined or dsp_ca_exists or judge_ca_exists\n\n    # Use\
-          \ Judge CA Cert if explicitly defined, otherwise use system default CA Certs\n\
-          \    ca_cert_path = judge_ca_cert_path if judge_ca_exists else True\n  \
-          \  judge_http_client = httpx.Client(verify=ca_cert_path) if use_tls else\
-          \ None\n\n    def launch_vllm(\n        model_path: str, gpu_count: int,\
-          \ retries: int = 120, delay: int = 10\n    ) -> tuple:\n        import subprocess\n\
-          \        import sys\n        import time\n\n        import requests\n  \
-          \      from instructlab.model.backends.common import free_tcp_ipv4_port\n\
-          \n        free_port = free_tcp_ipv4_port(\"127.0.0.1\")\n        port =\
-          \ str(free_port)\n        vllm_server = f\"http://127.0.0.1:{port}/v1\"\n\
-          \n        command = [\n            sys.executable,\n            \"-m\",\n\
-          \            \"vllm.entrypoints.openai.api_server\",\n            \"--port\"\
+          \n            )\n\n    # Use the default SSL context since it leverages\
+          \ OpenSSL to use the correct CA bundle.\n    judge_http_client = httpx.Client(verify=ssl.create_default_context())\n\
+          \n    if judge_secret_name is None:\n        judge_api_key = os.getenv(\"\
+          JUDGE_API_KEY\", \"\")\n        judge_model_name = os.getenv(\"JUDGE_NAME\"\
+          )\n        judge_endpoint = os.getenv(\"JUDGE_ENDPOINT\")\n    else:\n \
+          \       print(\"Eval Judge secret specified, fetching...\")\n        judge_api_key,\
+          \ judge_model_name, judge_endpoint = fetch_secret(\n            judge_secret_name,\
+          \ [\"api_token\", \"model_name\", \"endpoint\"]\n        )\n        print(\"\
+          Eval Judge secret data retrieved.\")\n\n    def launch_vllm(\n        model_path:\
+          \ str, gpu_count: int, retries: int = 120, delay: int = 10\n    ) -> tuple:\n\
+          \        import subprocess\n        import sys\n        import time\n\n\
+          \        import requests\n        from instructlab.model.backends.common\
+          \ import free_tcp_ipv4_port\n\n        free_port = free_tcp_ipv4_port(\"\
+          127.0.0.1\")\n        port = str(free_port)\n        vllm_server = f\"http://127.0.0.1:{port}/v1\"\
+          \n\n        command = [\n            sys.executable,\n            \"-m\"\
+          ,\n            \"vllm.entrypoints.openai.api_server\",\n            \"--port\"\
           ,\n            port,\n            \"--model\",\n            model_path,\n\
           \        ]\n        if gpu_count > 0:\n            command += [\n      \
           \          \"--tensor-parallel-size\",\n                str(gpu_count),\n\
@@ -1798,8 +1777,6 @@ deploymentSpec:
           value: /tmp
         - name: HF_HOME
           value: /tmp
-        - name: JUDGE_CA_CERT_PATH
-          value: /tmp/cert/ca.crt
         image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:c656c74338e3d59bf265e4b2fa9c01a69c8212992fa6d4511aef52a441506e68
         resources:
           accelerator:
@@ -1831,12 +1808,13 @@ deploymentSpec:
           \    sdg_secret_name: str = None,\n    sdg_batch_size: int = None,\n   \
           \ sdg_num_cpus: int = None,\n    taxonomy_repo_secret: str = None,\n   \
           \ repo_url: str = None,\n):\n    import base64\n    import os\n    import\
-          \ os.path\n    import re\n    import shutil\n    import subprocess\n   \
-          \ import tempfile\n    import urllib.parse\n\n    import instructlab.sdg\n\
-          \    import openai\n    import requests\n    import xdg_base_dirs\n    import\
-          \ yaml\n\n    REQUEST_TIMEOUT = 30  # seconds\n\n    def fetch_secret(secret_name,\
-          \ keys):\n        # Kubernetes API server inside the cluster\n        K8S_API_SERVER\
-          \ = \"https://kubernetes.default.svc\"\n        NAMESPACE_PATH = \"/var/run/secrets/kubernetes.io/serviceaccount/namespace\"\
+          \ os.path\n    import re\n    import shutil\n    import ssl\n    import\
+          \ subprocess\n    import tempfile\n    import urllib.parse\n\n    import\
+          \ httpx\n    import instructlab.sdg\n    import openai\n    import requests\n\
+          \    import xdg_base_dirs\n    import yaml\n\n    REQUEST_TIMEOUT = 30 \
+          \ # seconds\n\n    def fetch_secret(secret_name, keys):\n        # Kubernetes\
+          \ API server inside the cluster\n        K8S_API_SERVER = \"https://kubernetes.default.svc\"\
+          \n        NAMESPACE_PATH = \"/var/run/secrets/kubernetes.io/serviceaccount/namespace\"\
           \n        TOKEN_PATH = \"/var/run/secrets/kubernetes.io/serviceaccount/token\"\
           \n\n        # Fetch namespace\n        try:\n            with open(NAMESPACE_PATH,\
           \ \"r\") as f:\n                namespace = f.read().strip()\n        except\
@@ -1890,31 +1868,27 @@ deploymentSpec:
           \  print(\"SDG Repo secret data retrieved.\")\n\n    # Whether not provided\
           \ via env or secret\n    # Assume the repo is public\n    if not username\
           \ or ssh_key:\n        print(\"No credentials provided for taxonomy repo,\
-          \ assuming public repo...\")\n\n    ca_cert_path = os.getenv(\"SDG_CA_CERT_PATH\"\
-          )\n    ssl_cert_dir = os.getenv(\"SSL_CERT_DIR\")\n    ssl_cert_file = os.getenv(\"\
-          SSL_CERT_FILE\")\n    env = os.environ.copy()\n\n    # Set custom CA certificate\
-          \ if provided\n    # Consume this in the process execution environment\n\
-          \    # This is required for read_taxonomy calls which\n    # Perform nested\
-          \ calls to git clones.\n    if ca_cert_path and os.path.exists(ca_cert_path):\n\
-          \        print(f\"CA detected at {ca_cert_path}\")\n        env[\"GIT_SSL_CAINFO\"\
-          ] = ca_cert_path\n        os.environ[\"GIT_SSL_CAINFO\"] = ca_cert_path\n\
-          \    elif ssl_cert_dir and os.path.exists(ssl_cert_dir):\n        print(f\"\
-          CA detected at {ssl_cert_dir}\")\n        env[\"GIT_SSL_CAPATH\"] = ssl_cert_dir\n\
-          \        os.environ[\"GIT_SSL_CAPATH\"] = ca_cert_path\n    elif ssl_cert_file\
-          \ and os.path.exists(ssl_cert_file):\n        print(f\"CA detected at {ssl_cert_file}\"\
-          )\n        env[\"GIT_SSL_CAINFO\"] = ssl_cert_file\n        os.environ[\"\
-          GIT_SSL_CAINFO\"] = ssl_cert_file\n    else:\n        print(\"No CA detected.\
-          \ Using the CA bundle in the container image.\")\n\n    git_credentials_path\
-          \ = \"\"\n    ssh_key_path = \"\"\n    # Username/PAT takes precedence over\
-          \ ssh\n    if username and token:\n        print(\"Configuring Git Credentials...\"\
-          )\n        # Parse the domain from the repository URL\n        parsed_url\
-          \ = urllib.parse.urlparse(repo_url)\n        git_server = parsed_url.netloc\n\
-          \n        # Set up Git credential helper\n        exec_cmd([\"git\", \"\
-          config\", \"--global\", \"credential.helper\", \"store\"], env=env)\n\n\
-          \        # Save credentials dynamically for any Git server\n        git_credentials_directory\
-          \ = os.path.expanduser(\"~/.git\")\n        # Ensure the ~/.git directory\
-          \ exists\n        os.makedirs(git_credentials_directory, mode=0o700, exist_ok=True)\n\
-          \n        git_credentials_path = f\"{git_credentials_directory}/.git-credentials\"\
+          \ assuming public repo...\")\n\n    ssl_cert_dir = os.getenv(\"SSL_CERT_DIR\"\
+          )\n    ssl_cert_file = os.getenv(\"SSL_CERT_FILE\")\n    env = os.environ.copy()\n\
+          \n    # Set custom CA certificate if provided\n    # Consume this in the\
+          \ process execution environment\n    # This is required for read_taxonomy\
+          \ calls which\n    # Perform nested calls to git clones.\n    if ssl_cert_dir\
+          \ and os.path.exists(ssl_cert_dir):\n        print(f\"CA detected at {ssl_cert_dir}\"\
+          )\n        env[\"GIT_SSL_CAPATH\"] = ssl_cert_dir\n        os.environ[\"\
+          GIT_SSL_CAPATH\"] = ca_cert_path\n    elif ssl_cert_file and os.path.exists(ssl_cert_file):\n\
+          \        print(f\"CA detected at {ssl_cert_file}\")\n        env[\"GIT_SSL_CAINFO\"\
+          ] = ssl_cert_file\n        os.environ[\"GIT_SSL_CAINFO\"] = ssl_cert_file\n\
+          \    else:\n        print(\"No CA detected. Using the CA bundle in the container\
+          \ image.\")\n\n    git_credentials_path = \"\"\n    ssh_key_path = \"\"\n\
+          \    # Username/PAT takes precedence over ssh\n    if username and token:\n\
+          \        print(\"Configuring Git Credentials...\")\n        # Parse the\
+          \ domain from the repository URL\n        parsed_url = urllib.parse.urlparse(repo_url)\n\
+          \        git_server = parsed_url.netloc\n\n        # Set up Git credential\
+          \ helper\n        exec_cmd([\"git\", \"config\", \"--global\", \"credential.helper\"\
+          , \"store\"], env=env)\n\n        # Save credentials dynamically for any\
+          \ Git server\n        git_credentials_directory = os.path.expanduser(\"\
+          ~/.git\")\n        # Ensure the ~/.git directory exists\n        os.makedirs(git_credentials_directory,\
+          \ mode=0o700, exist_ok=True)\n\n        git_credentials_path = f\"{git_credentials_directory}/.git-credentials\"\
           \n        with open(git_credentials_path, \"w\") as f:\n            f.write(f\"\
           https://{username}:{token}@{git_server}\\n\")\n\n        os.chmod(git_credentials_path,\
           \ 0o600)\n        exec_cmd(\n            [\n                \"git\",\n \
@@ -1960,29 +1934,18 @@ deploymentSpec:
           \       endpoint = os.getenv(\"endpoint\")\n    else:\n        print(\"\
           SDG Teacher secret specified, fetching...\")\n        api_key, endpoint\
           \ = fetch_secret(sdg_secret_name, [\"api_token\", \"endpoint\"])\n     \
-          \   print(\"SDG Teacher secret data retrieved.\")\n\n    sdg_ca_cert_path\
-          \ = os.getenv(\"SDG_CA_CERT_PATH\")\n    dsp_ca_cert_path = os.getenv(\"\
-          SSL_CERT_FILE\")\n    dsp_ca_cert_dir = os.getenv(\"SSL_CERT_DIR\")\n\n\
-          \    dsp_cert_dir_defined = dsp_ca_cert_dir is not None\n    dsp_ca_exists\
-          \ = (\n        dsp_ca_cert_path is not None\n        and os.path.isfile(dsp_ca_cert_path)\n\
-          \        and (os.path.getsize(dsp_ca_cert_path) > 0)\n    )\n    sdg_ca_exists\
-          \ = (\n        sdg_ca_cert_path is not None\n        and os.path.isfile(sdg_ca_cert_path)\n\
-          \        and (os.path.getsize(sdg_ca_cert_path) > 0)\n    )\n\n    use_tls\
-          \ = dsp_cert_dir_defined or dsp_ca_exists or sdg_ca_exists\n\n    if use_tls:\n\
-          \        import httpx\n\n        # Use SDG CA Cert if explicitly defined,\
-          \ otherwise use system default CA Certs\n        ca_cert_path = sdg_ca_cert_path\
-          \ if sdg_ca_exists else True\n        custom_http_client = httpx.Client(verify=ca_cert_path)\n\
-          \        client = openai.OpenAI(\n            base_url=endpoint, api_key=api_key,\
-          \ http_client=custom_http_client\n        )\n    else:\n        client =\
-          \ openai.OpenAI(base_url=endpoint, api_key=api_key)\n\n    taxonomy_base\
-          \ = \"main\" if repo_branch or (repo_pr and int(repo_pr) > 0) else \"empty\"\
-          \n\n    print(\"Generating synthetic dataset for:\")\n    print()\n    print(\n\
-          \        instructlab.sdg.utils.taxonomy.read_taxonomy(\n            taxonomy_path,\
-          \ taxonomy_base, document_output_dir=f\"{sdg_path}/documents\"\n       \
-          \ )\n    )\n\n    # Generate synthetic dataset\n    # 1.0 is the default\
-          \ size\n    if sdg_sampling_size == 1.0:\n        # generate_data has a\
-          \ magic word for its taxonomy_base argument - 'empty'\n        # it allows\
-          \ generating from the whole repo, see:\n        # https://github.com/instructlab/sdg/blob/c6a9e74a1618b1077cd38e713b8aaed8b7c0c8ce/src/instructlab/sdg/utils/taxonomy.py#L230\n\
+          \   print(\"SDG Teacher secret data retrieved.\")\n\n    # Use the default\
+          \ SSL context since it leverages OpenSSL to use the correct CA bundle.\n\
+          \    http_client = httpx.Client(verify=ssl.create_default_context())\n \
+          \   client = openai.OpenAI(base_url=endpoint, api_key=api_key, http_client=http_client)\n\
+          \n    taxonomy_base = \"main\" if repo_branch or (repo_pr and int(repo_pr)\
+          \ > 0) else \"empty\"\n\n    print(\"Generating synthetic dataset for:\"\
+          )\n    print()\n    print(\n        instructlab.sdg.utils.taxonomy.read_taxonomy(\n\
+          \            taxonomy_path, taxonomy_base, document_output_dir=f\"{sdg_path}/documents\"\
+          \n        )\n    )\n\n    # Generate synthetic dataset\n    # 1.0 is the\
+          \ default size\n    if sdg_sampling_size == 1.0:\n        # generate_data\
+          \ has a magic word for its taxonomy_base argument - 'empty'\n        # it\
+          \ allows generating from the whole repo, see:\n        # https://github.com/instructlab/sdg/blob/c6a9e74a1618b1077cd38e713b8aaed8b7c0c8ce/src/instructlab/sdg/utils/taxonomy.py#L230\n\
           \        instructlab.sdg.generate_data(\n            client=client,\n  \
           \          num_instructions_to_generate=num_instructions_to_generate,\n\
           \            output_dir=sdg_path,\n            taxonomy=taxonomy_path,\n\
@@ -2068,8 +2031,6 @@ deploymentSpec:
           value: /tmp
         - name: HF_HOME
           value: /tmp
-        - name: SDG_CA_CERT_PATH
-          value: /tmp/cert/ca.crt
         image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:c656c74338e3d59bf265e4b2fa9c01a69c8212992fa6d4511aef52a441506e68
     exec-sdg-to-artifact-op:
       container:
@@ -2104,13 +2065,6 @@ deploymentSpec:
         - test_model_connection
         command:
         - sh
-        - -c
-        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
-          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.12.1'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
-          $0\" \"$@\"\n"
-        - sh
         - -ec
         - 'program_path=$(mktemp -d)
 
@@ -2122,12 +2076,12 @@ deploymentSpec:
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
           \ *\n\ndef test_model_connection(secret_name: str):\n    import base64\n\
-          \    import json\n    import os\n    import sys\n    import textwrap\n \
-          \   import time\n\n    import requests\n    from kubernetes import client,\
-          \ config\n    from kubernetes.client.rest import ApiException\n\n    config.load_incluster_config()\n\
-          \n    model_endpoint = \"\"\n    model_name = \"\"\n    model_api_key =\
-          \ \"\"\n    with open(\n        \"/var/run/secrets/kubernetes.io/serviceaccount/namespace\"\
-          , \"r\"\n    ) as namespace_path:\n        namespace = namespace_path.readline()\n\
+          \    import ssl\n    import sys\n    import textwrap\n    import time\n\n\
+          \    import httpx\n    from kubernetes import client, config\n    from kubernetes.client.rest\
+          \ import ApiException\n\n    config.load_incluster_config()\n\n    model_endpoint\
+          \ = \"\"\n    model_name = \"\"\n    model_api_key = \"\"\n    with open(\n\
+          \        \"/var/run/secrets/kubernetes.io/serviceaccount/namespace\", \"\
+          r\"\n    ) as namespace_path:\n        namespace = namespace_path.readline()\n\
           \n    with client.ApiClient() as api_client:\n        core_api = client.CoreV1Api(api_client)\n\
           \n        try:\n            secret = core_api.read_namespaced_secret(secret_name,\
           \ namespace)\n            print(f\"Reading secret {secret_name} data...\"\
@@ -2144,14 +2098,15 @@ deploymentSpec:
           \            \"\"\")\n            sys.exit(1)\n\n    request_auth = {\"\
           Authorization\": f\"Bearer {model_api_key}\"}\n    request_body = {\n  \
           \      \"model\": model_name,\n        \"messages\": [{\"role\": \"user\"\
-          , \"content\": \"tell me a funny joke.\"}],\n    }\n    # Make 3 attempts\n\
-          \    for i in range(1, 3):\n        resp = requests.post(\n            f\"\
-          {model_endpoint}/chat/completions\",\n            headers=request_auth,\n\
-          \            data=json.dumps(request_body),\n            verify=os.environ[\"\
-          SDG_CA_CERT_PATH\"],\n        )\n        if resp.status_code != 200:\n \
-          \           print(f\"Model Server {model_name} is not available. Attempt\
-          \ {i}/3...\")\n            time.sleep(5)\n        else:\n            print(\n\
-          \                textwrap.dedent(f\"\"\"\\\n            ###################\
+          , \"content\": \"tell me a funny joke.\"}],\n    }\n\n    # Use the default\
+          \ SSL context since it leverages OpenSSL to use the correct CA bundle.\n\
+          \    http_client = httpx.Client(verify=ssl.create_default_context())\n\n\
+          \    # Make 3 attempts\n    for i in range(1, 3):\n        resp = http_client.post(\n\
+          \            f\"{model_endpoint}/chat/completions\",\n            headers=request_auth,\n\
+          \            json=request_body,\n        )\n        if resp.status_code\
+          \ != 200:\n            print(f\"Model Server {model_name} is not available.\
+          \ Attempt {i}/3...\")\n            time.sleep(5)\n        else:\n      \
+          \      print(\n                textwrap.dedent(f\"\"\"\\\n            ###################\
           \ INFO #######################\n            # Model Server {model_name}\
           \ is up and running. #\n            ################################################\\\
           \n            \"\"\")\n            )\n            return\n    print(\n \
@@ -2160,10 +2115,7 @@ deploymentSpec:
           \ Server {model_name} is unavailable. Ensure the model is up and it is ready\
           \ to serve requests. #\n    #######################################################################################################\\\
           \n    \"\"\")\n    )\n    sys.exit(1)\n\n"
-        env:
-        - name: SDG_CA_CERT_PATH
-          value: /tmp/cert/ca.crt
-        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:10fe95cd2e6b85c865249d26e99571fc9a9897a75070c02fa5dcfdb3252d3eb2
+        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:b53a607cd4efa86a594da68586613e916ed4b7c626e8a7e793d75e0bd15e815a
     exec-test-model-connection-2:
       container:
         args:
@@ -2173,13 +2125,6 @@ deploymentSpec:
         - test_model_connection
         command:
         - sh
-        - -c
-        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
-          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.12.1'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
-          $0\" \"$@\"\n"
-        - sh
         - -ec
         - 'program_path=$(mktemp -d)
 
@@ -2191,12 +2136,12 @@ deploymentSpec:
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
           \ *\n\ndef test_model_connection(secret_name: str):\n    import base64\n\
-          \    import json\n    import os\n    import sys\n    import textwrap\n \
-          \   import time\n\n    import requests\n    from kubernetes import client,\
-          \ config\n    from kubernetes.client.rest import ApiException\n\n    config.load_incluster_config()\n\
-          \n    model_endpoint = \"\"\n    model_name = \"\"\n    model_api_key =\
-          \ \"\"\n    with open(\n        \"/var/run/secrets/kubernetes.io/serviceaccount/namespace\"\
-          , \"r\"\n    ) as namespace_path:\n        namespace = namespace_path.readline()\n\
+          \    import ssl\n    import sys\n    import textwrap\n    import time\n\n\
+          \    import httpx\n    from kubernetes import client, config\n    from kubernetes.client.rest\
+          \ import ApiException\n\n    config.load_incluster_config()\n\n    model_endpoint\
+          \ = \"\"\n    model_name = \"\"\n    model_api_key = \"\"\n    with open(\n\
+          \        \"/var/run/secrets/kubernetes.io/serviceaccount/namespace\", \"\
+          r\"\n    ) as namespace_path:\n        namespace = namespace_path.readline()\n\
           \n    with client.ApiClient() as api_client:\n        core_api = client.CoreV1Api(api_client)\n\
           \n        try:\n            secret = core_api.read_namespaced_secret(secret_name,\
           \ namespace)\n            print(f\"Reading secret {secret_name} data...\"\
@@ -2213,14 +2158,15 @@ deploymentSpec:
           \            \"\"\")\n            sys.exit(1)\n\n    request_auth = {\"\
           Authorization\": f\"Bearer {model_api_key}\"}\n    request_body = {\n  \
           \      \"model\": model_name,\n        \"messages\": [{\"role\": \"user\"\
-          , \"content\": \"tell me a funny joke.\"}],\n    }\n    # Make 3 attempts\n\
-          \    for i in range(1, 3):\n        resp = requests.post(\n            f\"\
-          {model_endpoint}/chat/completions\",\n            headers=request_auth,\n\
-          \            data=json.dumps(request_body),\n            verify=os.environ[\"\
-          SDG_CA_CERT_PATH\"],\n        )\n        if resp.status_code != 200:\n \
-          \           print(f\"Model Server {model_name} is not available. Attempt\
-          \ {i}/3...\")\n            time.sleep(5)\n        else:\n            print(\n\
-          \                textwrap.dedent(f\"\"\"\\\n            ###################\
+          , \"content\": \"tell me a funny joke.\"}],\n    }\n\n    # Use the default\
+          \ SSL context since it leverages OpenSSL to use the correct CA bundle.\n\
+          \    http_client = httpx.Client(verify=ssl.create_default_context())\n\n\
+          \    # Make 3 attempts\n    for i in range(1, 3):\n        resp = http_client.post(\n\
+          \            f\"{model_endpoint}/chat/completions\",\n            headers=request_auth,\n\
+          \            json=request_body,\n        )\n        if resp.status_code\
+          \ != 200:\n            print(f\"Model Server {model_name} is not available.\
+          \ Attempt {i}/3...\")\n            time.sleep(5)\n        else:\n      \
+          \      print(\n                textwrap.dedent(f\"\"\"\\\n            ###################\
           \ INFO #######################\n            # Model Server {model_name}\
           \ is up and running. #\n            ################################################\\\
           \n            \"\"\")\n            )\n            return\n    print(\n \
@@ -2229,10 +2175,7 @@ deploymentSpec:
           \ Server {model_name} is unavailable. Ensure the model is up and it is ready\
           \ to serve requests. #\n    #######################################################################################################\\\
           \n    \"\"\")\n    )\n    sys.exit(1)\n\n"
-        env:
-        - name: SDG_CA_CERT_PATH
-          value: /tmp/cert/ca.crt
-        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:10fe95cd2e6b85c865249d26e99571fc9a9897a75070c02fa5dcfdb3252d3eb2
+        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:b53a607cd4efa86a594da68586613e916ed4b7c626e8a7e793d75e0bd15e815a
     exec-test-model-registry:
       container:
         args:
@@ -2241,13 +2184,6 @@ deploymentSpec:
         - --function_to_execute
         - test_model_registry
         command:
-        - sh
-        - -c
-        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
-          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.12.1'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
-          $0\" \"$@\"\n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -2299,7 +2235,7 @@ deploymentSpec:
           \ ############# ERROR ###############\n        # Model Registry is not available\
           \ #\n        ###################################\\\n        \"\"\")\n  \
           \      )\n        raise\n\n"
-        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:10fe95cd2e6b85c865249d26e99571fc9a9897a75070c02fa5dcfdb3252d3eb2
+        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:b53a607cd4efa86a594da68586613e916ed4b7c626e8a7e793d75e0bd15e815a
     exec-test-oci-model:
       container:
         args:
@@ -2308,13 +2244,6 @@ deploymentSpec:
         - --function_to_execute
         - test_oci_model
         command:
-        - sh
-        - -c
-        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
-          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.12.1'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
-          $0\" \"$@\"\n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -2367,7 +2296,7 @@ deploymentSpec:
           \"\"\\\n            ################## ERROR ##################\n      \
           \      # Failed to check oci model and/or secret #\n            ###########################################\\\
           \n            \"\"\")\n            )\n            raise\n\n"
-        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:10fe95cd2e6b85c865249d26e99571fc9a9897a75070c02fa5dcfdb3252d3eb2
+        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:b53a607cd4efa86a594da68586613e916ed4b7c626e8a7e793d75e0bd15e815a
     exec-test-sdg-params:
       container:
         args:
@@ -2376,13 +2305,6 @@ deploymentSpec:
         - --function_to_execute
         - test_sdg_params
         command:
-        - sh
-        - -c
-        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
-          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.12.1'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
-          $0\" \"$@\"\n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -2407,26 +2329,24 @@ deploymentSpec:
           \    ############# INFO #############\n            # The SDG parameters\
           \ seem okay #\n            ################################\\\n        \
           \    \"\"\"\n        )\n    )\n\n"
-        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:10fe95cd2e6b85c865249d26e99571fc9a9897a75070c02fa5dcfdb3252d3eb2
+        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:b53a607cd4efa86a594da68586613e916ed4b7c626e8a7e793d75e0bd15e815a
     exec-test-taxonomy-repo:
       container:
         args:
         - "\n            # Increase logging verbosity\n            set -x &&\n\n \
-          \           # Set Preferred CA Cert\n            if [ -s \"$TAXONOMY_CA_CERT_PATH\"\
+          \           # Set Preferred CA Cert\n            if [ ! -z \"$SSL_CERT_DIR\"\
           \ ]; then\n                export GIT_SSL_NO_VERIFY=false\n            \
-          \    export GIT_SSL_CAINFO=\"$TAXONOMY_CA_CERT_PATH\"\n            elif\
-          \ [ ! -z \"$SSL_CERT_DIR\" ]; then\n                export GIT_SSL_NO_VERIFY=false\n\
-          \                export GIT_SSL_CAPATH=\"$SSL_CERT_DIR\"\n            elif\
-          \ [ -s \"$SSL_CERT_FILE\" ]; then\n                export GIT_SSL_NO_VERIFY=false\n\
-          \                export GIT_SSL_CAINFO=\"$SSL_CERT_FILE\"\n            fi\n\
-          \n            # ls-remote will fail if repo is not valid\n            for\
-          \ i in $(seq 1 5);\n            do\n                git ls-remote {{$.inputs.parameters['sdg_repo_url']}}\
+          \    export GIT_SSL_CAPATH=\"$SSL_CERT_DIR\"\n            elif [ -s \"$SSL_CERT_FILE\"\
+          \ ]; then\n                export GIT_SSL_NO_VERIFY=false\n            \
+          \    export GIT_SSL_CAINFO=\"$SSL_CERT_FILE\"\n            fi\n\n      \
+          \      # ls-remote will fail if repo is not valid\n            for i in\
+          \ $(seq 1 5);\n            do\n                git ls-remote {{$.inputs.parameters['sdg_repo_url']}}\
           \ > /dev/null && break\n                sleep 5\n            done\n    \
           \        "
         command:
         - /bin/sh
         - -c
-        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:10fe95cd2e6b85c865249d26e99571fc9a9897a75070c02fa5dcfdb3252d3eb2
+        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:b53a607cd4efa86a594da68586613e916ed4b7c626e8a7e793d75e0bd15e815a
     exec-test-training-operator:
       container:
         args:
@@ -2435,13 +2355,6 @@ deploymentSpec:
         - --function_to_execute
         - test_training_operator
         command:
-        - sh
-        - -c
-        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
-          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.12.1'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
-          $0\" \"$@\"\n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -2472,7 +2385,7 @@ deploymentSpec:
           \ Ensure your OpenShift AI installation has Training Operator enabled #\n\
           \            #################################################################################################################################\\\
           \n            \"\"\")\n            )\n            sys.exit(1)\n\n"
-        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:10fe95cd2e6b85c865249d26e99571fc9a9897a75070c02fa5dcfdb3252d3eb2
+        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:b53a607cd4efa86a594da68586613e916ed4b7c626e8a7e793d75e0bd15e815a
     exec-upload-model-op:
       container:
         args:
@@ -2605,7 +2518,7 @@ deploymentSpec:
           modelVersionName\"] = output_model_version\n    model.metadata[\"modelVersionId\"\
           ] = model_version_id\n    model.metadata[\"registeredModelId\"] = registered_model.id\n\
           \n"
-        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:10fe95cd2e6b85c865249d26e99571fc9a9897a75070c02fa5dcfdb3252d3eb2
+        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:b53a607cd4efa86a594da68586613e916ed4b7c626e8a7e793d75e0bd15e815a
 pipelineInfo:
   description: InstructLab pipeline
   displayName: InstructLab
@@ -2766,7 +2679,7 @@ root:
           parameters:
             uri:
               runtimeValue:
-                constant: oci://quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:10fe95cd2e6b85c865249d26e99571fc9a9897a75070c02fa5dcfdb3252d3eb2
+                constant: oci://quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:b53a607cd4efa86a594da68586613e916ed4b7c626e8a7e793d75e0bd15e815a
         taskInfo:
           name: importer
       importer-2:
@@ -3507,10 +3420,6 @@ platforms:
               outputParameterKey: name
               producerTask: createpvc-3
         exec-run-final-eval-op:
-          configMapAsVolume:
-          - configMapName: judge-server
-            mountPath: /tmp/cert
-            optional: false
           pvcMount:
           - mountPath: /output
             taskOutputParameter:
@@ -3525,20 +3434,12 @@ platforms:
               outputParameterKey: name
               producerTask: createpvc-2
         exec-run-mt-bench-op:
-          configMapAsVolume:
-          - configMapName: judge-server
-            mountPath: /tmp/cert
-            optional: false
           pvcMount:
           - mountPath: /output
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc-3
         exec-sdg-op:
-          configMapAsVolume:
-          - configMapName: teacher-server
-            mountPath: /tmp/cert
-            optional: true
           pvcMount:
           - mountPath: /data
             taskOutputParameter:
@@ -3562,16 +3463,6 @@ platforms:
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc
-        exec-test-model-connection:
-          configMapAsVolume:
-          - configMapName: judge-server
-            mountPath: /tmp/cert
-            optional: false
-        exec-test-model-connection-2:
-          configMapAsVolume:
-          - configMapName: teacher-server
-            mountPath: /tmp/cert
-            optional: false
         exec-upload-model-op:
           pvcMount:
           - mountPath: /output

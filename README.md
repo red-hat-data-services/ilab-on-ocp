@@ -80,21 +80,7 @@ In addition to model training, InstructLab also performs Synthetic Data Generati
 1. Deploy the Teacher Model following these [instructions](/kubernetes_yaml/mixtral_serve/README.md).
 2. Deploy the Judge Model following these [instructions](/kubernetes_yaml/prometheus_serve/README.md).
 
-Once these two model servers are deployed, we need to add the following configmaps and secrets to our namespace so that the InstructLab pipeline can successfully communicate with each model.
-
-```yaml
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: teacher-server
-data:
-  endpoint: '<YOUR_MIXTRAL_MODEL_ENDPOINT>'
-  model: mixtral
-  ca.crt: |  # If using TLS
-    -----BEGIN CERTIFICATE-----
-    <TLS Certificate to Teacher Model>
-    -----END CERTIFICATE-----
-```
+Once these two model servers are deployed, we need to add the following secrets to our namespace so that the InstructLab pipeline can successfully communicate with each model. Be sure to add any required CAs to trust to the DSCI or DSPA.
 
 ```yaml
 kind: Secret
@@ -107,20 +93,6 @@ type: Opaque
 ```
 
 ```yaml
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: judge-server
-data:
-  endpoint: '<YOUR_PROMETHEUS_MODEL_ENDPOINT>'
-  model: prometheus
-  ca.crt: |  # If using TLS
-    -----BEGIN CERTIFICATE-----
-    <TLS Certificate to Judge Model>
-    -----END CERTIFICATE-----
-```
-
-```yaml
 kind: Secret
 apiVersion: v1
 metadata:
@@ -130,7 +102,7 @@ data:
 type: Opaque
 ```
 
-**NOTE**: You can find and copy the certs needed for the teacher- and judge-server ConfigMaps in another ConfigMap, `kube-root-ca.crt`, found in the same namespace as the hosted model
+**NOTE**: You can find and copy the certs needed for the DSCI or DSPA in another ConfigMap, `kube-root-ca.crt`, found in the same namespace as the hosted model
 
 
 ### Run the Pipeline
