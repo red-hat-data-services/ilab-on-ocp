@@ -70,10 +70,12 @@ def sdg_op(
     import os.path
     import re
     import shutil
+    import ssl
     import subprocess
     import tempfile
     import urllib.parse
 
+    import httpx
     import instructlab.sdg
     import openai
     import requests
@@ -181,7 +183,6 @@ def sdg_op(
     if not username or ssh_key:
         print("No credentials provided for taxonomy repo, assuming public repo...")
 
-    ca_cert_path = os.getenv("SDG_CA_CERT_PATH")
     ssl_cert_dir = os.getenv("SSL_CERT_DIR")
     ssl_cert_file = os.getenv("SSL_CERT_FILE")
     env = os.environ.copy()
@@ -190,11 +191,7 @@ def sdg_op(
     # Consume this in the process execution environment
     # This is required for read_taxonomy calls which
     # Perform nested calls to git clones.
-    if ca_cert_path and os.path.exists(ca_cert_path):
-        print(f"CA detected at {ca_cert_path}")
-        env["GIT_SSL_CAINFO"] = ca_cert_path
-        os.environ["GIT_SSL_CAINFO"] = ca_cert_path
-    elif ssl_cert_dir and os.path.exists(ssl_cert_dir):
+    if ssl_cert_dir and os.path.exists(ssl_cert_dir):
         print(f"CA detected at {ssl_cert_dir}")
         env["GIT_SSL_CAPATH"] = ssl_cert_dir
         os.environ["GIT_SSL_CAPATH"] = ca_cert_path
@@ -312,35 +309,9 @@ def sdg_op(
         api_key, endpoint = fetch_secret(sdg_secret_name, ["api_token", "endpoint"])
         print("SDG Teacher secret data retrieved.")
 
-    sdg_ca_cert_path = os.getenv("SDG_CA_CERT_PATH")
-    dsp_ca_cert_path = os.getenv("SSL_CERT_FILE")
-    dsp_ca_cert_dir = os.getenv("SSL_CERT_DIR")
-
-    dsp_cert_dir_defined = dsp_ca_cert_dir is not None
-    dsp_ca_exists = (
-        dsp_ca_cert_path is not None
-        and os.path.isfile(dsp_ca_cert_path)
-        and (os.path.getsize(dsp_ca_cert_path) > 0)
-    )
-    sdg_ca_exists = (
-        sdg_ca_cert_path is not None
-        and os.path.isfile(sdg_ca_cert_path)
-        and (os.path.getsize(sdg_ca_cert_path) > 0)
-    )
-
-    use_tls = dsp_cert_dir_defined or dsp_ca_exists or sdg_ca_exists
-
-    if use_tls:
-        import httpx
-
-        # Use SDG CA Cert if explicitly defined, otherwise use system default CA Certs
-        ca_cert_path = sdg_ca_cert_path if sdg_ca_exists else True
-        custom_http_client = httpx.Client(verify=ca_cert_path)
-        client = openai.OpenAI(
-            base_url=endpoint, api_key=api_key, http_client=custom_http_client
-        )
-    else:
-        client = openai.OpenAI(base_url=endpoint, api_key=api_key)
+    # Use the default SSL context since it leverages OpenSSL to use the correct CA bundle.
+    http_client = httpx.Client(verify=ssl.create_default_context())
+    client = openai.OpenAI(base_url=endpoint, api_key=api_key, http_client=http_client)
 
     taxonomy_base = "main" if repo_branch or (repo_pr and int(repo_pr) > 0) else "empty"
 
