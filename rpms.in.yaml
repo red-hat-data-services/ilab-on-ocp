@@ -1,0 +1,7 @@
+contentOrigin:
+  repofiles:
+    - ubi.repo
+packages:
+  - skopeo
+context:
+  containerfile: ./Dockerfile.konflux
