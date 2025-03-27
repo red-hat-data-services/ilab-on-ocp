@@ -1,0 +1,103 @@
+---
+lockfileVersion: 1
+lockfileVendor: redhat
+arches:
+- arch: x86_64
+  packages:
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/appstream/os/Packages/c/containers-common-1-82.module+el8.10.0+22931+799fd806.x86_64.rpm
+    repoid: ubi-8-appstream-rpms
+    size: 146183
+    checksum: sha256:570d15c933298a1a3bff3dc9ec8fcd68cc3b4f0b7c02ff399b9a0eb51c015aa7
+    name: containers-common
+    evr: 2:1-82.module+el8.10.0+22931+799fd806
+    sourcerpm: containers-common-1-82.module+el8.10.0+22931+799fd806.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/appstream/os/Packages/c/criu-3.18-5.module+el8.10.0+22931+799fd806.x86_64.rpm
+    repoid: ubi-8-appstream-rpms
+    size: 578035
+    checksum: sha256:7428012aeae2c883b136c9468b5f3229cf2889cca282875627f2b3806e3b17a7
+    name: criu
+    evr: 3.18-5.module+el8.10.0+22931+799fd806
+    sourcerpm: criu-3.18-5.module+el8.10.0+22931+799fd806.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/appstream/os/Packages/f/fuse-overlayfs-1.13-1.module+el8.10.0+22931+799fd806.x86_64.rpm
+    repoid: ubi-8-appstream-rpms
+    size: 71667
+    checksum: sha256:b27c56b2b671cfe030d2f3c5707654c1c5cce8d4586d7fe5e9a8615259a63c25
+    name: fuse-overlayfs
+    evr: 1.13-1.module+el8.10.0+22931+799fd806
+    sourcerpm: fuse-overlayfs-1.13-1.module+el8.10.0+22931+799fd806.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/appstream/os/Packages/l/libnet-1.1.6-15.el8.x86_64.rpm
+    repoid: ubi-8-appstream-rpms
+    size: 68624
+    checksum: sha256:09c8dd96ccb066d458edd30dba99ae72cc3941c1563d260cb259d33d9bf6fe12
+    name: libnet
+    evr: 1.1.6-15.el8
+    sourcerpm: libnet-1.1.6-15.el8.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/appstream/os/Packages/l/libslirp-4.4.0-2.module+el8.10.0+22931+799fd806.x86_64.rpm
+    repoid: ubi-8-appstream-rpms
+    size: 72231
+    checksum: sha256:9a71d7e4ab0ef782fdfd106656a4c0cdb05f95dff54aece26a1659ef1cafd05e
+    name: libslirp
+    evr: 4.4.0-2.module+el8.10.0+22931+799fd806
+    sourcerpm: libslirp-4.4.0-2.module+el8.10.0+22931+799fd806.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/appstream/os/Packages/p/protobuf-c-1.3.0-8.el8.x86_64.rpm
+    repoid: ubi-8-appstream-rpms
+    size: 38124
+    checksum: sha256:7c6b990e2c0a6cd8ff1f76fc2c83a83528b4663f90257e6b5a708b733bd78085
+    name: protobuf-c
+    evr: 1.3.0-8.el8
+    sourcerpm: protobuf-c-1.3.0-8.el8.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/appstream/os/Packages/r/runc-1.1.12-6.module+el8.10.0+22931+799fd806.x86_64.rpm
+    repoid: ubi-8-appstream-rpms
+    size: 3343035
+    checksum: sha256:0d8307b3e48793763dd2a75774a581581e52f0f42553227c603715ef44d934a6
+    name: runc
+    evr: 1:1.1.12-6.module+el8.10.0+22931+799fd806
+    sourcerpm: runc-1.1.12-6.module+el8.10.0+22931+799fd806.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/appstream/os/Packages/s/skopeo-1.14.5-3.module+el8.10.0+22931+799fd806.x86_64.rpm
+    repoid: ubi-8-appstream-rpms
+    size: 9418755
+    checksum: sha256:5dc50176d6d495e672c112e1b359e1cc32d0ba5bbfa17f5c025e082eac2ec0eb
+    name: skopeo
+    evr: 2:1.14.5-3.module+el8.10.0+22931+799fd806
+    sourcerpm: skopeo-1.14.5-3.module+el8.10.0+22931+799fd806.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/appstream/os/Packages/s/slirp4netns-1.2.3-1.module+el8.10.0+22931+799fd806.x86_64.rpm
+    repoid: ubi-8-appstream-rpms
+    size: 57475
+    checksum: sha256:a5b068c8a1bde91920a6e2e6019f699494faefd70043a73feef6d1bf69026290
+    name: slirp4netns
+    evr: 1.2.3-1.module+el8.10.0+22931+799fd806
+    sourcerpm: slirp4netns-1.2.3-1.module+el8.10.0+22931+799fd806.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/baseos/os/Packages/f/fuse-common-3.3.0-19.el8.x86_64.rpm
+    repoid: ubi-8-baseos-rpms
+    size: 23032
+    checksum: sha256:a4c39d54e246a380607450418b11334a4beebf9ad2bd1249c3d4ff45558079d8
+    name: fuse-common
+    evr: 3.3.0-19.el8
+    sourcerpm: fuse-2.9.7-19.el8.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/baseos/os/Packages/f/fuse3-3.3.0-19.el8.x86_64.rpm
+    repoid: ubi-8-baseos-rpms
+    size: 56072
+    checksum: sha256:85bc0a3e479d28c8df590da4cb4e33d8ed6c132797089a28a99ffa4d0319c573
+    name: fuse3
+    evr: 3.3.0-19.el8
+    sourcerpm: fuse-2.9.7-19.el8.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/baseos/os/Packages/f/fuse3-libs-3.3.0-19.el8.x86_64.rpm
+    repoid: ubi-8-baseos-rpms
+    size: 98084
+    checksum: sha256:8874711ac53e998d6ad22e4afa15da2a23a4800687ba0e7fa2c089d765acf3c5
+    name: fuse3-libs
+    evr: 3.3.0-19.el8
+    sourcerpm: fuse-2.9.7-19.el8.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/baseos/os/Packages/k/kmod-25-20.el8.x86_64.rpm
+    repoid: ubi-8-baseos-rpms
+    size: 129356
+    checksum: sha256:0d2ca4e3cdeb9929d40257e25d3be233a608bf4269a16be77a63503d78233ed2
+    name: kmod
+    evr: 25-20.el8
+    sourcerpm: kmod-25-20.el8.src.rpm
+  source: []
+  module_metadata:
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/appstream/os/repodata/c890935b7eab5263ac765dec50abb12638e3744c2f016f671197942fda500009-modules.yaml.gz
+    repoid: ubi-8-appstream-rpms
+    size: 60317
+    checksum: sha256:c890935b7eab5263ac765dec50abb12638e3744c2f016f671197942fda500009
