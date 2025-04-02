@@ -405,16 +405,6 @@ components:
                 componentInputParameter: sdg_num_workers
           taskInfo:
             name: test-sdg-params
-        test-taxonomy-repo:
-          cachingOptions: {}
-          componentRef:
-            name: comp-test-taxonomy-repo
-          inputs:
-            parameters:
-              sdg_repo_url:
-                componentInputParameter: sdg_repo_url
-          taskInfo:
-            name: test-taxonomy-repo
         test-training-operator:
           cachingOptions: {}
           componentRef:
@@ -818,12 +808,6 @@ components:
           parameterType: NUMBER_INTEGER
         sdg_num_workers:
           parameterType: NUMBER_INTEGER
-  comp-test-taxonomy-repo:
-    executorLabel: exec-test-taxonomy-repo
-    inputDefinitions:
-      parameters:
-        sdg_repo_url:
-          parameterType: STRING
   comp-test-training-operator:
     executorLabel: exec-test-training-operator
   comp-upload-model-op:
@@ -2344,23 +2328,6 @@ deploymentSpec:
           \    ############# INFO #############\n            # The SDG parameters\
           \ seem okay #\n            ################################\\\n        \
           \    \"\"\"\n        )\n    )\n\n"
-        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:f53e53a39b1a88c3a530e87ded473ba2648b8d8586ec9e31a4484e9bafb3059d
-    exec-test-taxonomy-repo:
-      container:
-        args:
-        - "\n            # Increase logging verbosity\n            set -x &&\n\n \
-          \           # Set Preferred CA Cert\n            if [ ! -z \"$SSL_CERT_DIR\"\
-          \ ]; then\n                export GIT_SSL_NO_VERIFY=false\n            \
-          \    export GIT_SSL_CAPATH=\"$SSL_CERT_DIR\"\n            elif [ -s \"$SSL_CERT_FILE\"\
-          \ ]; then\n                export GIT_SSL_NO_VERIFY=false\n            \
-          \    export GIT_SSL_CAINFO=\"$SSL_CERT_FILE\"\n            fi\n\n      \
-          \      # ls-remote will fail if repo is not valid\n            for i in\
-          \ $(seq 1 5);\n            do\n                git ls-remote {{$.inputs.parameters['sdg_repo_url']}}\
-          \ > /dev/null && break\n                sleep 5\n            done\n    \
-          \        "
-        command:
-        - /bin/sh
-        - -c
         image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:f53e53a39b1a88c3a530e87ded473ba2648b8d8586ec9e31a4484e9bafb3059d
     exec-test-training-operator:
       container:
