@@ -71,7 +71,7 @@ def ilab_pipeline(
     sdg_pipeline: str = "/usr/share/instructlab/sdg/pipelines/agentic",  # https://github.com/instructlab/instructlab/blob/v0.21.2/tests/testdata/default_config.yaml#L122
     sdg_max_batch_len: int = 5000,  # https://github.com/instructlab/instructlab/blob/v0.21.2/tests/testdata/default_config.yaml#L334
     sdg_sample_size: float = 1.0,  # FIXME: Not present in default config. Not configurable upstream at this point, capability added via https://github.com/instructlab/sdg/pull/432
-    sdg_batch_size: int = 128,
+    sdg_batch_size: int = 32,
     sdg_num_workers: int = 2,
     # Training phase
     train_tolerations: Optional[list] = None,
@@ -79,7 +79,7 @@ def ilab_pipeline(
     train_gpu_identifier: str = "nvidia.com/gpu",
     train_gpu_per_worker: int = 2,  # FIXME: Not present in default config. Arbitrary value chosen to demonstrate multi-node multi-gpu capabilities. Needs proper reference architecture justification.
     train_cpu_per_worker: str = "2",  # FIXME: Not present in default config. Arbitrary value chosen to demonstrate multi-node multi-gpu capabilities. Needs proper reference architecture justification.
-    train_memory_per_worker: str = "56Gi",  # Default value set after observing the memory requirements when running the pipeline
+    train_memory_per_worker: str = "100Gi",  # Default value set after observing the memory requirements when running the pipeline
     train_num_workers: int = 2,  # FIXME: Not present in default config. Arbitrary value chosen to demonstrate multi-node multi-gpu capabilities. Needs proper reference architecture justification.
     train_num_epochs_phase_1: int = 7,  # https://github.com/instructlab/instructlab/blob/v0.21.2/tests/testdata/default_config.yaml#L364
     train_num_epochs_phase_2: int = 10,  # https://github.com/instructlab/instructlab/blob/v0.21.2/tests/testdata/default_config.yaml#L377

@@ -20,7 +20,7 @@
 #    output_oci_model_uri: str [Default: '']
 #    output_oci_registry_secret: str
 #    sdg_base_model: str
-#    sdg_batch_size: int [Default: 128.0]
+#    sdg_batch_size: int [Default: 32.0]
 #    sdg_max_batch_len: int [Default: 5000.0]
 #    sdg_num_workers: int [Default: 2.0]
 #    sdg_pipeline: str [Default: '/usr/share/instructlab/sdg/pipelines/agentic']
@@ -39,7 +39,7 @@
 #    train_learning_rate_phase_1: float [Default: 2e-05]
 #    train_learning_rate_phase_2: float [Default: 6e-06]
 #    train_max_batch_len: int [Default: 5000.0]
-#    train_memory_per_worker: str [Default: '56Gi']
+#    train_memory_per_worker: str [Default: '100Gi']
 #    train_node_selectors: dict
 #    train_num_epochs_phase_1: int [Default: 7.0]
 #    train_num_epochs_phase_2: int [Default: 10.0]
@@ -405,16 +405,6 @@ components:
                 componentInputParameter: sdg_num_workers
           taskInfo:
             name: test-sdg-params
-        test-taxonomy-repo:
-          cachingOptions: {}
-          componentRef:
-            name: comp-test-taxonomy-repo
-          inputs:
-            parameters:
-              sdg_repo_url:
-                componentInputParameter: sdg_repo_url
-          taskInfo:
-            name: test-taxonomy-repo
         test-training-operator:
           cachingOptions: {}
           componentRef:
@@ -818,12 +808,6 @@ components:
           parameterType: NUMBER_INTEGER
         sdg_num_workers:
           parameterType: NUMBER_INTEGER
-  comp-test-taxonomy-repo:
-    executorLabel: exec-test-taxonomy-repo
-    inputDefinitions:
-      parameters:
-        sdg_repo_url:
-          parameterType: STRING
   comp-test-training-operator:
     executorLabel: exec-test-training-operator
   comp-upload-model-op:
@@ -1932,9 +1916,9 @@ deploymentSpec:
           \ # Fetch pull request head\n        exec_cmd(\n            [\"git\", \"\
           fetch\", \"origin\", f\"pull/{repo_pr}/head:pr-{repo_pr}\"],\n         \
           \   cwd=taxonomy_path,\n            env=env,\n        )\n        exec_cmd([\"\
-          git\", \"checkout\", repo_branch], cwd=taxonomy_path, env=env)\n\n    if\
-          \ sdg_secret_name is None:\n        api_key = os.getenv(\"api_key\")\n \
-          \       model_name = os.getenv(\"model_name\")\n        endpoint = os.getenv(\"\
+          git\", \"checkout\", f\"pr-{repo_pr}\"], cwd=taxonomy_path, env=env)\n\n\
+          \    if sdg_secret_name is None:\n        api_key = os.getenv(\"api_key\"\
+          )\n        model_name = os.getenv(\"model_name\")\n        endpoint = os.getenv(\"\
           endpoint\")\n    else:\n        print(\"SDG Teacher secret specified, fetching...\"\
           )\n        api_key, model_name, endpoint = fetch_secret(\n            sdg_secret_name,\
           \ [\"api_token\", \"model_name\", \"endpoint\"]\n        )\n        print(\"\
@@ -2344,23 +2328,6 @@ deploymentSpec:
           \    ############# INFO #############\n            # The SDG parameters\
           \ seem okay #\n            ################################\\\n        \
           \    \"\"\"\n        )\n    )\n\n"
-        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:f53e53a39b1a88c3a530e87ded473ba2648b8d8586ec9e31a4484e9bafb3059d
-    exec-test-taxonomy-repo:
-      container:
-        args:
-        - "\n            # Increase logging verbosity\n            set -x &&\n\n \
-          \           # Set Preferred CA Cert\n            if [ ! -z \"$SSL_CERT_DIR\"\
-          \ ]; then\n                export GIT_SSL_NO_VERIFY=false\n            \
-          \    export GIT_SSL_CAPATH=\"$SSL_CERT_DIR\"\n            elif [ -s \"$SSL_CERT_FILE\"\
-          \ ]; then\n                export GIT_SSL_NO_VERIFY=false\n            \
-          \    export GIT_SSL_CAINFO=\"$SSL_CERT_FILE\"\n            fi\n\n      \
-          \      # ls-remote will fail if repo is not valid\n            for i in\
-          \ $(seq 1 5);\n            do\n                git ls-remote {{$.inputs.parameters['sdg_repo_url']}}\
-          \ > /dev/null && break\n                sleep 5\n            done\n    \
-          \        "
-        command:
-        - /bin/sh
-        - -c
         image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:f53e53a39b1a88c3a530e87ded473ba2648b8d8586ec9e31a4484e9bafb3059d
     exec-test-training-operator:
       container:
@@ -3205,7 +3172,7 @@ root:
           or "s3://<BUCKET>/<PATH_TO_MODEL>".
         parameterType: STRING
       sdg_batch_size:
-        defaultValue: 128.0
+        defaultValue: 32.0
         description: SDG parameter. The number of completions per request to the teacher
           model. Must be a value between 1-4096. This can be increased to improve
           SDG performance based on the hardware of the teacher model or reduced if
@@ -3324,7 +3291,7 @@ root:
         isOptional: true
         parameterType: NUMBER_INTEGER
       train_memory_per_worker:
-        defaultValue: 56Gi
+        defaultValue: 100Gi
         description: Training parameter. Memory per GPU per each node/worker to use
           for training. 56Gi or more is recommended
         isOptional: true
