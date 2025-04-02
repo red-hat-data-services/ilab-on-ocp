@@ -7,48 +7,6 @@ from kfp import dsl
 from utils.consts import RHELAI_IMAGE, TOOLBOX_IMAGE
 
 
-@dsl.container_component
-def git_clone_op(
-    repo_branch: str,
-    repo_pr: Optional[int],
-    repo_url: Optional[str],
-    taxonomy_path: str = "/data/taxonomy",
-):
-    return dsl.ContainerSpec(
-        TOOLBOX_IMAGE,
-        ["/bin/sh", "-c"],
-        [
-            f"""
-            # Increase logging verbosity
-            set -x &&
-
-            # Set Preferred CA Cert
-            if [ -s "$TAXONOMY_CA_CERT_PATH" ]; then
-                export GIT_SSL_NO_VERIFY=false
-                export GIT_SSL_CAINFO="$TAXONOMY_CA_CERT_PATH"
-            elif [ ! -z "$SSL_CERT_DIR" ]; then
-                export GIT_SSL_NO_VERIFY=false
-                export GIT_SSL_CAPATH="$SSL_CERT_DIR"
-            elif [ -s "$SSL_CERT_FILE" ]; then
-                export GIT_SSL_NO_VERIFY=false
-                export GIT_SSL_CAINFO="$SSL_CERT_FILE"
-            fi
-
-            # Clone Taxonomy Repo
-            git clone {repo_url} {taxonomy_path} &&
-            cd {taxonomy_path} &&
-
-            # Checkout and use taxonomy repo branch or PR if specified
-            if [ -n "{repo_branch}" ]; then
-                git fetch origin {repo_branch} && git checkout {repo_branch};
-            elif [ -n "{repo_pr}" ] && [ {repo_pr} -gt 0 ]; then
-                git fetch origin pull/{repo_pr}/head:{repo_pr} && git checkout {repo_pr};
-            fi
-            """
-        ],
-    )
-
-
 @dsl.component(base_image=RHELAI_IMAGE, install_kfp_package=False)
 def sdg_op(
     num_instructions_to_generate: int,
@@ -84,7 +42,7 @@ def sdg_op(
 
     REQUEST_TIMEOUT = 30  # seconds
 
-    def fetch_secret(secret_name, keys):
+    def fetch_secret(secret_name, keys, optional=False):
         # Kubernetes API server inside the cluster
         K8S_API_SERVER = "https://kubernetes.default.svc"
         NAMESPACE_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
@@ -120,6 +78,8 @@ def sdg_op(
                 if key in secret_data:
                     values.append(base64.b64decode(secret_data[key]).decode())
             return values
+        elif optional and response.status_code == 404:
+            return [None for _ in keys]
         else:
             raise RuntimeError(
                 f"Error fetching secret: {response.status_code} {response.text}"
@@ -168,11 +128,18 @@ def sdg_op(
         token = os.getenv("GIT_TOKEN")
         ssh_key = os.getenv("GIT_SSH_KEY")
     else:
-        print("SDG Repo secret specified, fetching...")
+        print("SDG repo secret specified, fetching...")
         username, token, ssh_key = fetch_secret(
-            taxonomy_repo_secret, ["GIT_USERNAME", "GIT_TOKEN", "GIT_SSH_KEY"]
+            taxonomy_repo_secret,
+            ["GIT_USERNAME", "GIT_TOKEN", "GIT_SSH_KEY"],
+            optional=taxonomy_repo_secret == "taxonomy-repo-secret",
         )
-        print("SDG Repo secret data retrieved.")
+        if username or ssh_key:
+            print("SDG repo secret data retrieved.")
+        else:
+            print(
+                "SDG repo secret content not available. Assuming the default pipeline parameter is unused."
+            )
 
     # Whether not provided via env or secret
     # Assume the repo is public
@@ -190,7 +157,7 @@ def sdg_op(
     if ssl_cert_dir and os.path.exists(ssl_cert_dir):
         print(f"CA detected at {ssl_cert_dir}")
         env["GIT_SSL_CAPATH"] = ssl_cert_dir
-        os.environ["GIT_SSL_CAPATH"] = ca_cert_path
+        os.environ["GIT_SSL_CAPATH"] = ssl_cert_dir
     elif ssl_cert_file and os.path.exists(ssl_cert_file):
         print(f"CA detected at {ssl_cert_file}")
         env["GIT_SSL_CAINFO"] = ssl_cert_file
@@ -295,7 +262,7 @@ def sdg_op(
             cwd=taxonomy_path,
             env=env,
         )
-        exec_cmd(["git", "checkout", repo_branch], cwd=taxonomy_path, env=env)
+        exec_cmd(["git", "checkout", f"pr-{repo_pr}"], cwd=taxonomy_path, env=env)
 
     if sdg_secret_name is None:
         api_key = os.getenv("api_key")
@@ -321,7 +288,9 @@ def sdg_op(
     http_client = httpx.Client(verify=ssl.create_default_context())
     client = openai.OpenAI(base_url=endpoint, api_key=api_key, http_client=http_client)
 
-    taxonomy_base = "main" if repo_branch or (repo_pr and int(repo_pr) > 0) else "empty"
+    # Set taxonomy_base = "empty" to force all the taxonomy files to be processed
+    # More info at https://github.com/instructlab/sdg/blob/a92b0856307b8f7de9f2faebe701949c9583383f/src/instructlab/sdg/utils/taxonomy.py#L295
+    taxonomy_base = "empty"
 
     print("Generating synthetic dataset for:")
     print()

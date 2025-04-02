@@ -20,7 +20,7 @@
 #    output_oci_model_uri: str [Default: '']
 #    output_oci_registry_secret: str
 #    sdg_base_model: str
-#    sdg_batch_size: int [Default: 128.0]
+#    sdg_batch_size: int [Default: 32.0]
 #    sdg_max_batch_len: int [Default: 5000.0]
 #    sdg_num_workers: int [Default: 2.0]
 #    sdg_pipeline: str [Default: '/usr/share/instructlab/sdg/pipelines/agentic']
@@ -39,7 +39,7 @@
 #    train_learning_rate_phase_1: float [Default: 2e-05]
 #    train_learning_rate_phase_2: float [Default: 6e-06]
 #    train_max_batch_len: int [Default: 5000.0]
-#    train_memory_per_worker: str [Default: '2Gi']
+#    train_memory_per_worker: str [Default: '100Gi']
 #    train_node_selectors: dict
 #    train_num_epochs_phase_1: int [Default: 7.0]
 #    train_num_epochs_phase_2: int [Default: 10.0]
@@ -405,16 +405,6 @@ components:
                 componentInputParameter: sdg_num_workers
           taskInfo:
             name: test-sdg-params
-        test-taxonomy-repo:
-          cachingOptions: {}
-          componentRef:
-            name: comp-test-taxonomy-repo
-          inputs:
-            parameters:
-              sdg_repo_url:
-                componentInputParameter: sdg_repo_url
-          taskInfo:
-            name: test-taxonomy-repo
         test-training-operator:
           cachingOptions: {}
           componentRef:
@@ -818,12 +808,6 @@ components:
           parameterType: NUMBER_INTEGER
         sdg_num_workers:
           parameterType: NUMBER_INTEGER
-  comp-test-taxonomy-repo:
-    executorLabel: exec-test-taxonomy-repo
-    inputDefinitions:
-      parameters:
-        sdg_repo_url:
-          parameterType: STRING
   comp-test-training-operator:
     executorLabel: exec-test-training-operator
   comp-upload-model-op:
@@ -1812,9 +1796,9 @@ deploymentSpec:
           \ subprocess\n    import tempfile\n    import urllib.parse\n\n    import\
           \ httpx\n    import instructlab.sdg\n    import openai\n    import requests\n\
           \    import xdg_base_dirs\n    import yaml\n\n    REQUEST_TIMEOUT = 30 \
-          \ # seconds\n\n    def fetch_secret(secret_name, keys):\n        # Kubernetes\
-          \ API server inside the cluster\n        K8S_API_SERVER = \"https://kubernetes.default.svc\"\
-          \n        NAMESPACE_PATH = \"/var/run/secrets/kubernetes.io/serviceaccount/namespace\"\
+          \ # seconds\n\n    def fetch_secret(secret_name, keys, optional=False):\n\
+          \        # Kubernetes API server inside the cluster\n        K8S_API_SERVER\
+          \ = \"https://kubernetes.default.svc\"\n        NAMESPACE_PATH = \"/var/run/secrets/kubernetes.io/serviceaccount/namespace\"\
           \n        TOKEN_PATH = \"/var/run/secrets/kubernetes.io/serviceaccount/token\"\
           \n\n        # Fetch namespace\n        try:\n            with open(NAMESPACE_PATH,\
           \ \"r\") as f:\n                namespace = f.read().strip()\n        except\
@@ -1832,17 +1816,19 @@ deploymentSpec:
           )\n            secret_data = response.json().get(\"data\", {})\n       \
           \     values = []\n            for key in keys:\n                if key\
           \ in secret_data:\n                    values.append(base64.b64decode(secret_data[key]).decode())\n\
-          \            return values\n        else:\n            raise RuntimeError(\n\
-          \                f\"Error fetching secret: {response.status_code} {response.text}\"\
-          \n            )\n\n    # Configure Git Credentials (if provided) and environment\n\
-          \n    def exec_cmd(cmd, **kwarg):\n        if \"stdout\" in kwarg or \"\
-          stderr\" in kwarg:\n            # If stdout or stderr is explicitly set,\
-          \ remove capture_output to avoid conflicts\n            res = subprocess.run(cmd,\
-          \ text=True, **kwarg)\n        else:\n            # Default behavior (captures\
-          \ output)\n            res = subprocess.run(cmd, text=True, capture_output=True,\
-          \ **kwarg)\n        if res.stdout:\n            print(\"STDOUT:\", res.stdout)\n\
-          \        if res.stderr:\n            print(\"STDERR:\", res.stderr)\n  \
-          \      if res.returncode != 0:\n            raise RuntimeError(f\"CMD {cmd}\
+          \            return values\n        elif optional and response.status_code\
+          \ == 404:\n            return [None for _ in keys]\n        else:\n    \
+          \        raise RuntimeError(\n                f\"Error fetching secret:\
+          \ {response.status_code} {response.text}\"\n            )\n\n    # Configure\
+          \ Git Credentials (if provided) and environment\n\n    def exec_cmd(cmd,\
+          \ **kwarg):\n        if \"stdout\" in kwarg or \"stderr\" in kwarg:\n  \
+          \          # If stdout or stderr is explicitly set, remove capture_output\
+          \ to avoid conflicts\n            res = subprocess.run(cmd, text=True, **kwarg)\n\
+          \        else:\n            # Default behavior (captures output)\n     \
+          \       res = subprocess.run(cmd, text=True, capture_output=True, **kwarg)\n\
+          \        if res.stdout:\n            print(\"STDOUT:\", res.stdout)\n  \
+          \      if res.stderr:\n            print(\"STDERR:\", res.stderr)\n    \
+          \    if res.returncode != 0:\n            raise RuntimeError(f\"CMD {cmd}\
           \ failed with error code: {res.returncode}\")\n        print(f\"Command\
           \ {cmd} succeeded.\")\n\n    def is_ssh(uri: str) -> bool:\n        \"\"\
           \"Checks if a given Git URI is an SSH-based URL.\"\"\"\n        ssh_patterns\
@@ -1859,20 +1845,24 @@ deploymentSpec:
           \    tokenizer_model_path = os.path.join(\"/oci\", escaped_uri, \"models\"\
           )\n\n    if not taxonomy_repo_secret:\n        username = os.getenv(\"GIT_USERNAME\"\
           )\n        token = os.getenv(\"GIT_TOKEN\")\n        ssh_key = os.getenv(\"\
-          GIT_SSH_KEY\")\n    else:\n        print(\"SDG Repo secret specified, fetching...\"\
-          )\n        username, token, ssh_key = fetch_secret(\n            taxonomy_repo_secret,\
-          \ [\"GIT_USERNAME\", \"GIT_TOKEN\", \"GIT_SSH_KEY\"]\n        )\n      \
-          \  print(\"SDG Repo secret data retrieved.\")\n\n    # Whether not provided\
-          \ via env or secret\n    # Assume the repo is public\n    if not username\
-          \ or ssh_key:\n        print(\"No credentials provided for taxonomy repo,\
-          \ assuming public repo...\")\n\n    ssl_cert_dir = os.getenv(\"SSL_CERT_DIR\"\
-          )\n    ssl_cert_file = os.getenv(\"SSL_CERT_FILE\")\n    env = os.environ.copy()\n\
+          GIT_SSH_KEY\")\n    else:\n        print(\"SDG repo secret specified, fetching...\"\
+          )\n        username, token, ssh_key = fetch_secret(\n            taxonomy_repo_secret,\n\
+          \            [\"GIT_USERNAME\", \"GIT_TOKEN\", \"GIT_SSH_KEY\"],\n     \
+          \       optional=taxonomy_repo_secret == \"taxonomy-repo-secret\",\n   \
+          \     )\n        if username or ssh_key:\n            print(\"SDG repo secret\
+          \ data retrieved.\")\n        else:\n            print(\n              \
+          \  \"SDG repo secret content not available. Assuming the default pipeline\
+          \ parameter is unused.\"\n            )\n\n    # Whether not provided via\
+          \ env or secret\n    # Assume the repo is public\n    if not username or\
+          \ ssh_key:\n        print(\"No credentials provided for taxonomy repo, assuming\
+          \ public repo...\")\n\n    ssl_cert_dir = os.getenv(\"SSL_CERT_DIR\")\n\
+          \    ssl_cert_file = os.getenv(\"SSL_CERT_FILE\")\n    env = os.environ.copy()\n\
           \n    # Set custom CA certificate if provided\n    # Consume this in the\
           \ process execution environment\n    # This is required for read_taxonomy\
           \ calls which\n    # Perform nested calls to git clones.\n    if ssl_cert_dir\
           \ and os.path.exists(ssl_cert_dir):\n        print(f\"CA detected at {ssl_cert_dir}\"\
           )\n        env[\"GIT_SSL_CAPATH\"] = ssl_cert_dir\n        os.environ[\"\
-          GIT_SSL_CAPATH\"] = ca_cert_path\n    elif ssl_cert_file and os.path.exists(ssl_cert_file):\n\
+          GIT_SSL_CAPATH\"] = ssl_cert_dir\n    elif ssl_cert_file and os.path.exists(ssl_cert_file):\n\
           \        print(f\"CA detected at {ssl_cert_file}\")\n        env[\"GIT_SSL_CAINFO\"\
           ] = ssl_cert_file\n        os.environ[\"GIT_SSL_CAINFO\"] = ssl_cert_file\n\
           \    else:\n        print(\"No CA detected. Using the CA bundle in the container\
@@ -1926,9 +1916,9 @@ deploymentSpec:
           \ # Fetch pull request head\n        exec_cmd(\n            [\"git\", \"\
           fetch\", \"origin\", f\"pull/{repo_pr}/head:pr-{repo_pr}\"],\n         \
           \   cwd=taxonomy_path,\n            env=env,\n        )\n        exec_cmd([\"\
-          git\", \"checkout\", repo_branch], cwd=taxonomy_path, env=env)\n\n    if\
-          \ sdg_secret_name is None:\n        api_key = os.getenv(\"api_key\")\n \
-          \       model_name = os.getenv(\"model_name\")\n        endpoint = os.getenv(\"\
+          git\", \"checkout\", f\"pr-{repo_pr}\"], cwd=taxonomy_path, env=env)\n\n\
+          \    if sdg_secret_name is None:\n        api_key = os.getenv(\"api_key\"\
+          )\n        model_name = os.getenv(\"model_name\")\n        endpoint = os.getenv(\"\
           endpoint\")\n    else:\n        print(\"SDG Teacher secret specified, fetching...\"\
           )\n        api_key, model_name, endpoint = fetch_secret(\n            sdg_secret_name,\
           \ [\"api_token\", \"model_name\", \"endpoint\"]\n        )\n        print(\"\
@@ -1942,15 +1932,16 @@ deploymentSpec:
           \    os.chdir(tempfile.gettempdir())\n\n    # Use the default SSL context\
           \ since it leverages OpenSSL to use the correct CA bundle.\n    http_client\
           \ = httpx.Client(verify=ssl.create_default_context())\n    client = openai.OpenAI(base_url=endpoint,\
-          \ api_key=api_key, http_client=http_client)\n\n    taxonomy_base = \"main\"\
-          \ if repo_branch or (repo_pr and int(repo_pr) > 0) else \"empty\"\n\n  \
-          \  print(\"Generating synthetic dataset for:\")\n    print()\n    print(\n\
-          \        instructlab.sdg.utils.taxonomy.read_taxonomy(\n            taxonomy_path,\
-          \ taxonomy_base, document_output_dir=f\"{sdg_path}/documents\"\n       \
-          \ )\n    )\n\n    # Generate synthetic dataset\n    # 1.0 is the default\
-          \ size\n    if sdg_sampling_size == 1.0:\n        # generate_data has a\
-          \ magic word for its taxonomy_base argument - 'empty'\n        # it allows\
-          \ generating from the whole repo, see:\n        # https://github.com/instructlab/sdg/blob/c6a9e74a1618b1077cd38e713b8aaed8b7c0c8ce/src/instructlab/sdg/utils/taxonomy.py#L230\n\
+          \ api_key=api_key, http_client=http_client)\n\n    # Set taxonomy_base =\
+          \ \"empty\" to force all the taxonomy files to be processed\n    # More\
+          \ info at https://github.com/instructlab/sdg/blob/a92b0856307b8f7de9f2faebe701949c9583383f/src/instructlab/sdg/utils/taxonomy.py#L295\n\
+          \    taxonomy_base = \"empty\"\n\n    print(\"Generating synthetic dataset\
+          \ for:\")\n    print()\n    print(\n        instructlab.sdg.utils.taxonomy.read_taxonomy(\n\
+          \            taxonomy_path, taxonomy_base, document_output_dir=f\"{sdg_path}/documents\"\
+          \n        )\n    )\n\n    # Generate synthetic dataset\n    # 1.0 is the\
+          \ default size\n    if sdg_sampling_size == 1.0:\n        # generate_data\
+          \ has a magic word for its taxonomy_base argument - 'empty'\n        # it\
+          \ allows generating from the whole repo, see:\n        # https://github.com/instructlab/sdg/blob/c6a9e74a1618b1077cd38e713b8aaed8b7c0c8ce/src/instructlab/sdg/utils/taxonomy.py#L230\n\
           \        instructlab.sdg.generate_data(\n            client=client,\n  \
           \          num_instructions_to_generate=num_instructions_to_generate,\n\
           \            output_dir=sdg_path,\n            taxonomy=taxonomy_path,\n\
@@ -2212,7 +2203,8 @@ deploymentSpec:
           \        ###############################################################\\\
           \n        \"\"\")\n        )\n        return\n\n    try:\n        # Extract\
           \ the port out of the URL because the ModelRegistry client expects those\
-          \ as separate arguments.\n        model_registry_api_url_parsed = urllib.parse.urlparse(model_registry_endpoint)\n\
+          \ as separate arguments.\n        model_registry_endpoint = model_registry_endpoint.rstrip(\"\
+          /\")\n        model_registry_api_url_parsed = urllib.parse.urlparse(model_registry_endpoint)\n\
           \        model_registry_api_url_port = model_registry_api_url_parsed.port\n\
           \n        if model_registry_api_url_port:\n            model_registry_api_server_address\
           \ = model_registry_endpoint.replace(\n                model_registry_api_url_parsed.netloc,\n\
@@ -2330,29 +2322,12 @@ deploymentSpec:
           \                f\"\"\"\\\n                ##############################################\
           \ ERROR ##############################################\n               \
           \ # sdg_batch_size must be a value between 1-4096 and sdg_num_workers must\
-          \ be a value between 1-10  #\n                ###################################################################################################\\\
+          \ be a value between 2-10  #\n                ###################################################################################################\\\
           \n                \"\"\"\n            )\n        )\n        sys.exit(1)\n\
           \n    print(\n        textwrap.dedent(\n            f\"\"\"\\\n        \
           \    ############# INFO #############\n            # The SDG parameters\
           \ seem okay #\n            ################################\\\n        \
           \    \"\"\"\n        )\n    )\n\n"
-        image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:f53e53a39b1a88c3a530e87ded473ba2648b8d8586ec9e31a4484e9bafb3059d
-    exec-test-taxonomy-repo:
-      container:
-        args:
-        - "\n            # Increase logging verbosity\n            set -x &&\n\n \
-          \           # Set Preferred CA Cert\n            if [ ! -z \"$SSL_CERT_DIR\"\
-          \ ]; then\n                export GIT_SSL_NO_VERIFY=false\n            \
-          \    export GIT_SSL_CAPATH=\"$SSL_CERT_DIR\"\n            elif [ -s \"$SSL_CERT_FILE\"\
-          \ ]; then\n                export GIT_SSL_NO_VERIFY=false\n            \
-          \    export GIT_SSL_CAINFO=\"$SSL_CERT_FILE\"\n            fi\n\n      \
-          \      # ls-remote will fail if repo is not valid\n            for i in\
-          \ $(seq 1 5);\n            do\n                git ls-remote {{$.inputs.parameters['sdg_repo_url']}}\
-          \ > /dev/null && break\n                sleep 5\n            done\n    \
-          \        "
-        command:
-        - /bin/sh
-        - -c
         image: quay.io/opendatahub/ds-pipelines-runtime-generic@sha256:f53e53a39b1a88c3a530e87ded473ba2648b8d8586ec9e31a4484e9bafb3059d
     exec-test-training-operator:
       container:
@@ -3134,7 +3109,7 @@ root:
       k8s_storage_class_name:
         defaultValue: standard
         description: A Kubernetes StorageClass name for persistent volumes. Selected
-          StorageClass must support RWX PersistentVolumes.
+          StorageClass must support ReadWriteMany(RWX) PersistentVolume access mode.
         isOptional: true
         parameterType: STRING
       k8s_storage_size:
@@ -3197,10 +3172,11 @@ root:
           or "s3://<BUCKET>/<PATH_TO_MODEL>".
         parameterType: STRING
       sdg_batch_size:
-        defaultValue: 128.0
-        description: SDG parameter. The number of completions to per request to the
-          teacher model. This can be increased to improve SDG performance based on
-          the hardware of the teacher model.
+        defaultValue: 32.0
+        description: SDG parameter. The number of completions per request to the teacher
+          model. Must be a value between 1-4096. This can be increased to improve
+          SDG performance based on the hardware of the teacher model or reduced if
+          SDG fails due to connection errors with the teacher model.
         isOptional: true
         parameterType: NUMBER_INTEGER
       sdg_max_batch_len:
@@ -3212,8 +3188,10 @@ root:
       sdg_num_workers:
         defaultValue: 2.0
         description: SDG parameter. The number of concurrent workers sending completion
-          requests. This can be increased to improve SDG performance based on the
-          hardware of the teacher model.
+          requests to the teacher model. Must be a value between 2-10. This can be
+          increased to improve SDG performance based on the hardware of the teacher
+          model or reduced if SDG fails due to connection errors with the teacher
+          model.
         isOptional: true
         parameterType: NUMBER_INTEGER
       sdg_pipeline:
@@ -3313,9 +3291,9 @@ root:
         isOptional: true
         parameterType: NUMBER_INTEGER
       train_memory_per_worker:
-        defaultValue: 2Gi
+        defaultValue: 100Gi
         description: Training parameter. Memory per GPU per each node/worker to use
-          for training.
+          for training. 56Gi or more is recommended
         isOptional: true
         parameterType: STRING
       train_node_selectors:
