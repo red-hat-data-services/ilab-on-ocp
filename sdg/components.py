@@ -84,7 +84,7 @@ def sdg_op(
 
     REQUEST_TIMEOUT = 30  # seconds
 
-    def fetch_secret(secret_name, keys):
+    def fetch_secret(secret_name, keys, optional=False):
         # Kubernetes API server inside the cluster
         K8S_API_SERVER = "https://kubernetes.default.svc"
         NAMESPACE_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
@@ -120,6 +120,8 @@ def sdg_op(
                 if key in secret_data:
                     values.append(base64.b64decode(secret_data[key]).decode())
             return values
+        elif optional and response.status_code == 404:
+            return [None for _ in keys]
         else:
             raise RuntimeError(
                 f"Error fetching secret: {response.status_code} {response.text}"
@@ -168,11 +170,18 @@ def sdg_op(
         token = os.getenv("GIT_TOKEN")
         ssh_key = os.getenv("GIT_SSH_KEY")
     else:
-        print("SDG Repo secret specified, fetching...")
+        print("SDG repo secret specified, fetching...")
         username, token, ssh_key = fetch_secret(
-            taxonomy_repo_secret, ["GIT_USERNAME", "GIT_TOKEN", "GIT_SSH_KEY"]
+            taxonomy_repo_secret,
+            ["GIT_USERNAME", "GIT_TOKEN", "GIT_SSH_KEY"],
+            optional=taxonomy_repo_secret == "taxonomy-repo-secret",
         )
-        print("SDG Repo secret data retrieved.")
+        if username or ssh_key:
+            print("SDG repo secret data retrieved.")
+        else:
+            print(
+                "SDG repo secret content not available. Assuming the default pipeline parameter is unused."
+            )
 
     # Whether not provided via env or secret
     # Assume the repo is public
