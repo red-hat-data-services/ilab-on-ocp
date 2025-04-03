@@ -629,36 +629,6 @@ def test_oci_model(output_oci_model_uri: str, output_oci_registry_secret: str):
             raise
 
 
-@dsl.container_component
-def test_taxonomy_repo(sdg_repo_url: str):
-    return dsl.ContainerSpec(
-        RUNTIME_GENERIC_IMAGE,
-        ["/bin/sh", "-c"],
-        [
-            f"""
-            # Increase logging verbosity
-            set -x &&
-
-            # Set Preferred CA Cert
-            if [ ! -z "$SSL_CERT_DIR" ]; then
-                export GIT_SSL_NO_VERIFY=false
-                export GIT_SSL_CAPATH="$SSL_CERT_DIR"
-            elif [ -s "$SSL_CERT_FILE" ]; then
-                export GIT_SSL_NO_VERIFY=false
-                export GIT_SSL_CAINFO="$SSL_CERT_FILE"
-            fi
-
-            # ls-remote will fail if repo is not valid
-            for i in $(seq 1 5);
-            do
-                git ls-remote {sdg_repo_url} > /dev/null && break
-                sleep 5
-            done
-            """
-        ],
-    )
-
-
 @dsl.pipeline(display_name="Prerequisite check")
 def prerequisites_check_op(
     sdg_repo_url: str,
@@ -703,10 +673,6 @@ def prerequisites_check_op(
         output_oci_registry_secret=output_oci_registry_secret,
     )
     test_oci_configuration_op.set_caching_options(False)
-
-    # Validate git repository
-    test_taxonomy_repo_op = test_taxonomy_repo(sdg_repo_url=sdg_repo_url)
-    test_taxonomy_repo_op.set_caching_options(False)
 
     # Validate the SDG configuration
     test_sdg_params_op = test_sdg_params(
