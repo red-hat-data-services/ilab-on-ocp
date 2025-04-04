@@ -51,6 +51,7 @@ DEFAULT_REPO_URL = "https://github.com/instructlab/taxonomy.git"
 )
 def ilab_pipeline(
     sdg_base_model: str,
+    sdg_repo_url: str,
     # Model output
     output_oci_model_uri: str = "",
     output_oci_registry_secret: str = None,
@@ -60,12 +61,11 @@ def ilab_pipeline(
     output_model_registry_api_url: str = None,
     output_modelcar_base_image: str = "registry.access.redhat.com/ubi9-micro:latest",
     # SDG phase
-    sdg_repo_url: str = None,
     sdg_repo_secret: str = "taxonomy-repo-secret",
-    sdg_repo_branch: Optional[str] = None,
+    sdg_repo_branch: Optional[str] = "main",
     sdg_repo_pr: Optional[
         int
-    ] = None,  # FIXME: https://issues.redhat.com/browse/RHOAIRFE-467
+    ] = 0,  # FIXME: https://issues.redhat.com/browse/RHOAIRFE-467
     sdg_teacher_secret: str = "teacher-secret",
     sdg_scale_factor: int = 30,  # https://github.com/instructlab/instructlab/blob/v0.21.2/tests/testdata/default_config.yaml#L125
     sdg_pipeline: str = "/usr/share/instructlab/sdg/pipelines/agentic",  # https://github.com/instructlab/instructlab/blob/v0.21.2/tests/testdata/default_config.yaml#L122
