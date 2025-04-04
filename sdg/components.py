@@ -30,6 +30,7 @@ def sdg_op(
     import shutil
     import ssl
     import subprocess
+    import sys
     import tempfile
     import urllib.parse
 
@@ -77,6 +78,8 @@ def sdg_op(
             for key in keys:
                 if key in secret_data:
                     values.append(base64.b64decode(secret_data[key]).decode())
+                else:
+                    values.append(None)
             return values
         elif optional and response.status_code == 404:
             return [None for _ in keys]
@@ -273,6 +276,13 @@ def sdg_op(
         api_key, model_name, endpoint = fetch_secret(
             sdg_secret_name, ["api_token", "model_name", "endpoint"]
         )
+        if endpoint is None or model_name is None:
+            print(
+                f"The SDG secret {sdg_secret_name} requires at least data.model_name and data.endpoint",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
         print("SDG Teacher secret data retrieved.")
 
     # A hack because InstructLab assumes the value for model_name is a valid path and the name of the model.
