@@ -2080,25 +2080,25 @@ deploymentSpec:
           \    import ssl\n    import sys\n    import textwrap\n    import time\n\n\
           \    import httpx\n    from kubernetes import client, config\n    from kubernetes.client.rest\
           \ import ApiException\n\n    config.load_incluster_config()\n\n    model_endpoint\
-          \ = \"\"\n    model_name = \"\"\n    model_api_key = \"\"\n    with open(\n\
+          \ = \"\"\n    model_name = \"\"\n    model_api_token = \"\"\n    with open(\n\
           \        \"/var/run/secrets/kubernetes.io/serviceaccount/namespace\", \"\
           r\"\n    ) as namespace_path:\n        namespace = namespace_path.readline()\n\
           \n    with client.ApiClient() as api_client:\n        core_api = client.CoreV1Api(api_client)\n\
           \n        try:\n            secret = core_api.read_namespaced_secret(secret_name,\
           \ namespace)\n            print(f\"Reading secret {secret_name} data...\"\
-          )\n            model_api_key = base64.b64decode(secret.data[\"api_token\"\
+          )\n            model_api_token = base64.b64decode(secret.data[\"api_token\"\
           ]).decode(\"utf-8\")\n            model_name = base64.b64decode(secret.data[\"\
           model_name\"]).decode(\"utf-8\")\n            model_endpoint = base64.b64decode(secret.data[\"\
           endpoint\"]).decode(\"utf-8\")\n        except (ApiException, KeyError)\
           \ as e:\n            print(f\"\"\"\n            ############################################\
           \ ERROR #####################################################\n        \
           \    # Error reading {secret_name}. Ensure you created a secret with this\
-          \ name in namespace {namespace} and #\n            # has 'api_key', 'model_name',\
+          \ name in namespace {namespace} and #\n            # has 'api_token', 'model_name',\
           \ and 'endpoint' present                                               \
           \   #\n            ########################################################################################################\n\
           \            \"\"\")\n            sys.exit(1)\n\n    request_auth = {\"\
-          Authorization\": f\"Bearer {model_api_key}\"}\n    request_body = {\n  \
-          \      \"model\": model_name,\n        \"messages\": [{\"role\": \"user\"\
+          Authorization\": f\"Bearer {model_api_token}\"}\n    request_body = {\n\
+          \        \"model\": model_name,\n        \"messages\": [{\"role\": \"user\"\
           , \"content\": \"tell me a funny joke.\"}],\n    }\n\n    # Use the default\
           \ SSL context since it leverages OpenSSL to use the correct CA bundle.\n\
           \    http_client = httpx.Client(verify=ssl.create_default_context())\n\n\
@@ -2140,25 +2140,25 @@ deploymentSpec:
           \    import ssl\n    import sys\n    import textwrap\n    import time\n\n\
           \    import httpx\n    from kubernetes import client, config\n    from kubernetes.client.rest\
           \ import ApiException\n\n    config.load_incluster_config()\n\n    model_endpoint\
-          \ = \"\"\n    model_name = \"\"\n    model_api_key = \"\"\n    with open(\n\
+          \ = \"\"\n    model_name = \"\"\n    model_api_token = \"\"\n    with open(\n\
           \        \"/var/run/secrets/kubernetes.io/serviceaccount/namespace\", \"\
           r\"\n    ) as namespace_path:\n        namespace = namespace_path.readline()\n\
           \n    with client.ApiClient() as api_client:\n        core_api = client.CoreV1Api(api_client)\n\
           \n        try:\n            secret = core_api.read_namespaced_secret(secret_name,\
           \ namespace)\n            print(f\"Reading secret {secret_name} data...\"\
-          )\n            model_api_key = base64.b64decode(secret.data[\"api_token\"\
+          )\n            model_api_token = base64.b64decode(secret.data[\"api_token\"\
           ]).decode(\"utf-8\")\n            model_name = base64.b64decode(secret.data[\"\
           model_name\"]).decode(\"utf-8\")\n            model_endpoint = base64.b64decode(secret.data[\"\
           endpoint\"]).decode(\"utf-8\")\n        except (ApiException, KeyError)\
           \ as e:\n            print(f\"\"\"\n            ############################################\
           \ ERROR #####################################################\n        \
           \    # Error reading {secret_name}. Ensure you created a secret with this\
-          \ name in namespace {namespace} and #\n            # has 'api_key', 'model_name',\
+          \ name in namespace {namespace} and #\n            # has 'api_token', 'model_name',\
           \ and 'endpoint' present                                               \
           \   #\n            ########################################################################################################\n\
           \            \"\"\")\n            sys.exit(1)\n\n    request_auth = {\"\
-          Authorization\": f\"Bearer {model_api_key}\"}\n    request_body = {\n  \
-          \      \"model\": model_name,\n        \"messages\": [{\"role\": \"user\"\
+          Authorization\": f\"Bearer {model_api_token}\"}\n    request_body = {\n\
+          \        \"model\": model_name,\n        \"messages\": [{\"role\": \"user\"\
           , \"content\": \"tell me a funny joke.\"}],\n    }\n\n    # Use the default\
           \ SSL context since it leverages OpenSSL to use the correct CA bundle.\n\
           \    http_client = httpx.Client(verify=ssl.create_default_context())\n\n\
