@@ -203,8 +203,8 @@ jinja2==3.1.5 \
     --hash=sha256:8fefff8dc3034e27bb80d67c671eb8a9bc424c0ef4c0826edbff304cceff43bb \
     --hash=sha256:aba0f4dc9ed8013c424088f68a5c226f7d6097ed89b246d7749c2ec4175c6adb
     # via ilab-on-ocp (pyproject.toml)
-kfp==2.9.0 \
-    --hash=sha256:936b34261d7356f5f1960d07d12632a84f36f928e14a72cea7c092f2a224de7d
+kfp==2.12.1 \
+    --hash=sha256:702e2fa62ef529e426b874666a2b3292edaaa9962da0f44defa3f1077c77efed
     # via
     #   ilab-on-ocp (pyproject.toml)
     #   kfp-kubernetes
