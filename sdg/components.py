@@ -43,7 +43,7 @@ def sdg_op(
 
     REQUEST_TIMEOUT = 30  # seconds
 
-    def fetch_secret(secret_name, keys, optional=False):
+    def fetch_secret(secret_name, optional=False):
         # Kubernetes API server inside the cluster
         K8S_API_SERVER = "https://kubernetes.default.svc"
         NAMESPACE_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
@@ -73,16 +73,9 @@ def sdg_op(
 
         if response.status_code == 200:
             print(f"Successfully fetched secret {secret_name}")
-            secret_data = response.json().get("data", {})
-            values = []
-            for key in keys:
-                if key in secret_data:
-                    values.append(base64.b64decode(secret_data[key]).decode())
-                else:
-                    values.append(None)
-            return values
+            return response.json()
         elif optional and response.status_code == 404:
-            return [None for _ in keys]
+            return None
         else:
             raise RuntimeError(
                 f"Error fetching secret: {response.status_code} {response.text}"
@@ -132,11 +125,40 @@ def sdg_op(
         ssh_key = os.getenv("GIT_SSH_KEY")
     else:
         print("SDG repo secret specified, fetching...")
-        username, token, ssh_key = fetch_secret(
-            taxonomy_repo_secret,
-            ["GIT_USERNAME", "GIT_TOKEN", "GIT_SSH_KEY"],
-            optional=taxonomy_repo_secret == "taxonomy-repo-secret",
-        )
+        # When the user opts not provide a taxonomy repo secret
+        # to the pipeline, we use the default secret name below
+        is_optional = taxonomy_repo_secret == "taxonomy-repo-secret"
+        secret = fetch_secret(taxonomy_repo_secret, optional=is_optional)
+        username, token, ssh_key = "", "", ""
+        # If we found a secret, it should be either basic-auth or ssh-auth
+        if secret:
+            secret_data = secret.get("data", {})
+            secret_type = secret.get("type", "")
+            # Required Fields for each type: https://kubernetes.io/docs/concepts/configuration/secret/#basic-authentication-secret
+            if secret_type == "kubernetes.io/basic-auth":
+                # Even though these are listed as required, you can create a k8s basic-auth secret without
+                # these fields present
+                if "username" not in secret_data:
+                    raise RuntimeError(
+                        f"Taxonomy secret '{taxonomy_repo_secret}' missing required field 'username'"
+                    )
+                if "password" not in secret_data:
+                    raise RuntimeError(
+                        f"Taxonomy secret '{taxonomy_repo_secret}' missing required field 'password'"
+                    )
+                username = base64.b64decode(secret_data["username"]).decode()
+                token = base64.b64decode(secret_data["password"]).decode()
+            elif secret_type == "kubernetes.io/ssh-auth":
+                if "ssh-privatekey" not in secret_data:
+                    raise RuntimeError(
+                        f"Taxonomy secret '{taxonomy_repo_secret}' missing required field 'ssh-privatekey'"
+                    )
+                ssh_key = base64.b64decode(secret_data["ssh-privatekey"]).decode()
+            else:
+                raise RuntimeError(
+                    f"Only basic-auth or ssh-auth secret types are supported, got type: {secret_type}"
+                )
+
         if username or ssh_key:
             print("SDG repo secret data retrieved.")
         else:
@@ -146,7 +168,7 @@ def sdg_op(
 
     # Whether not provided via env or secret
     # Assume the repo is public
-    if not username or ssh_key:
+    if not username and not ssh_key:
         print("No credentials provided for taxonomy repo, assuming public repo...")
 
     ssl_cert_dir = os.getenv("SSL_CERT_DIR")
@@ -273,10 +295,18 @@ def sdg_op(
         endpoint = os.getenv("endpoint")
     else:
         print("SDG Teacher secret specified, fetching...")
-        api_key, model_name, endpoint = fetch_secret(
-            sdg_secret_name, ["api_token", "model_name", "endpoint"]
+        secret = fetch_secret(
+            sdg_secret_name,
         )
-        if endpoint is None or model_name is None:
+        secret_data = secret.get("data", {})
+        api_key = (
+            base64.b64decode(secret_data["api_token"]).decode()
+            if "api_token" in secret_data
+            else ""
+        )
+        model_name = base64.b64decode(secret_data.get("model_name", "")).decode()
+        endpoint = base64.b64decode(secret_data.get("endpoint", "")).decode()
+        if not endpoint or not model_name:
             print(
                 f"The SDG secret {sdg_secret_name} requires at least data.model_name and data.endpoint",
                 file=sys.stderr,
