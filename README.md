@@ -77,6 +77,17 @@ oc -n <data-science-project-name/namespace> oc apply -f oci_output_push_secret.y
 
 Note the `metadata.name` of this secret, you will need this when filling out the InstructLab pipeline parameters.
 
+## Taxonomy Repo
+
+As per the [SDG taxonomy tree] documentation, you should have a taxonomy git repo ready. When running the pipeline in the following step, you will be prompted for an optional `sdg_repo_secret` parameter.
+
+This is useful if your taxonomy repo is private. In such a case you can provide a kubernetes `Secret` of type either [basic-auth] or [ssh-auth]. Follow these instructions to create your secret.
+If using `basic-auth`, provide your Git access token as the `password`. It is required that these credentials are applicable to not only the parent taxonomy repo, but also any nested repo provided within
+each individual qna file.
+
+By default the secret name `taxonomy-repo-secret` is used, or you can opt to provide another secret under the `sdg_repo_secret` field.
+
+
 ## Run the Pipeline
 
 Now that all the cluster requirements have been set up, we are ready to upload and run our InstructLab pipeline!
@@ -115,3 +126,5 @@ For a troubleshooting guide see [here][troubleshooting].
 [nfs storage]: ./manifests/nfs_storage/nfs_storage.md
 [troubleshooting]: ./docs/troubleshooting.md
 [bug]: https://issues.redhat.com/browse/RHOAIENG-22522
+[basic-auth] : https://kubernetes.io/docs/concepts/configuration/secret/#basic-authentication-secret
+[ssh-auth]: https://kubernetes.io/docs/concepts/configuration/secret/#ssh-authentication-secrets
