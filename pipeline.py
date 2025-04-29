@@ -8,6 +8,8 @@ from kfp import compiler, dsl
 from kfp.kubernetes import (
     CreatePVC,
     DeletePVC,
+    add_node_selector_json,
+    add_toleration_json,
     mount_pvc,
     use_secret_as_env,
     use_secret_as_volume,
@@ -131,7 +133,7 @@ def ilab_pipeline(
         sdg_batch_size: SDG parameter. The number of completions per request to the teacher model. Must be a value between 1-4096. This can be increased to improve SDG performance based on the hardware of the teacher model or reduced if SDG fails due to connection errors with the teacher model.
         sdg_num_workers: SDG parameter. The number of concurrent workers sending completion requests to the teacher model. Must be a value between 2-10. This can be increased to improve SDG performance based on the hardware of the teacher model or reduced if SDG fails due to connection errors with the teacher model.
 
-        train_tolerations: Training parameter. List of tolerations applied to training pods.
+        train_tolerations: Training parameter. List of tolerations applied to training and eval pods.
         train_node_selectors: Training parameter. A JSON containing node selectors applied to training pods.
         train_gpu_identifier: Training parameter. The GPU type used for training pods, e.g. nvidia.com/gpu
         train_gpu_per_worker: Training parameter. Number of GPUs per each node/worker to use for training.
@@ -379,6 +381,8 @@ def ilab_pipeline(
     run_mt_bench_task.set_accelerator_limit(1)
     run_mt_bench_task.set_caching_options(False)
     run_mt_bench_task.after(training_phase_2)
+    add_toleration_json(run_mt_bench_task, train_tolerations)
+    add_node_selector_json(run_mt_bench_task, train_node_selectors)
 
     # uncomment if updating image with same tag
     # set_image_pull_policy(run_mt_bench_task, "Always")
@@ -419,6 +423,8 @@ def ilab_pipeline(
     final_eval_task.set_accelerator_type(eval_gpu_identifier)
     final_eval_task.set_accelerator_limit(1)
     final_eval_task.set_caching_options(False)
+    add_toleration_json(final_eval_task, train_tolerations)
+    add_node_selector_json(final_eval_task, train_node_selectors)
 
     output_model_task = upload_model_op(
         output_oci_model_uri=output_oci_model_uri,

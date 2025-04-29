@@ -457,8 +457,8 @@ requires-dist = [
     { name = "click", specifier = ">=8.1.7" },
     { name = "httpx", specifier = "==0.28.1" },
     { name = "jinja2", specifier = ">=3.1.4" },
-    { name = "kfp", url = "https://github.com/kubeflow/pipelines/archive/26946059963051cce5a8a70270ebc6bc9f7e2bd6.tar.gz", subdirectory = "sdk/python" },
-    { name = "kfp-kubernetes", specifier = ">=1.4.0" },
+    { name = "kfp", specifier = "==2.13.0" },
+    { name = "kfp-kubernetes", specifier = "==1.5.0" },
     { name = "kubeflow-training", specifier = "==1.8.1" },
     { name = "kubernetes", specifier = "==30.1.0" },
     { name = "model-registry", specifier = "==0.2.14" },
@@ -481,8 +481,8 @@ wheels = [
 
 [[package]]
 name = "kfp"
-version = "2.12.1"
-source = { url = "https://github.com/kubeflow/pipelines/archive/26946059963051cce5a8a70270ebc6bc9f7e2bd6.tar.gz", subdirectory = "sdk/python" }
+version = "2.13.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
     { name = "docstring-parser" },
@@ -498,39 +498,17 @@ dependencies = [
     { name = "tabulate" },
     { name = "urllib3" },
 ]
-sdist = { hash = "sha256:6ee411a519cb9d2efca4a486e5a1ee01ab4c621ef888b554e422d83a82d7e4bb" }
-
-[package.metadata]
-requires-dist = [
-    { name = "click", specifier = ">=8.0.0,<9" },
-    { name = "docker", marker = "extra == 'all'" },
-    { name = "docstring-parser", specifier = ">=0.7.3,<1" },
-    { name = "google-api-core", specifier = ">=1.31.5,!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0.dev0" },
-    { name = "google-auth", specifier = ">=1.6.1,<3" },
-    { name = "google-cloud-storage", specifier = ">=2.2.1,<3" },
-    { name = "kfp-kubernetes", marker = "extra == 'all'", specifier = "<2" },
-    { name = "kfp-kubernetes", marker = "extra == 'kubernetes'", specifier = "<2" },
-    { name = "kfp-pipeline-spec", specifier = "==0.6.0" },
-    { name = "kfp-server-api", specifier = ">=2.1.0,<2.5.0" },
-    { name = "kubernetes", specifier = ">=8.0.0,<31" },
-    { name = "protobuf", specifier = ">=4.21.1,<5" },
-    { name = "pyyaml", specifier = ">=5.3,<7" },
-    { name = "requests-toolbelt", specifier = ">=0.8.0,<2" },
-    { name = "tabulate", specifier = ">=0.8.6,<1" },
-    { name = "typing-extensions", marker = "python_full_version < '3.9'", specifier = ">=3.7.4,<5" },
-    { name = "urllib3", specifier = "<2.0.0" },
-]
-provides-extras = ["all", "kubernetes"]
+sdist = { url = "https://files.pythonhosted.org/packages/0a/8e/cc5418e615c6923914911b43971c04509bf06153b6113e9e64ecdcc9e8c3/kfp-2.13.0.tar.gz", hash = "sha256:bd3e820452157472614217849f7a1cfd9c5d0d3cc7473ace80b6494ca06e8886", size = 269066 }
 
 [[package]]
 name = "kfp-kubernetes"
-version = "1.4.0"
+version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "kfp" },
     { name = "protobuf" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/78/92/5df7b43e06329132d15e43eaae75518b7e9b785cfa72c5cde1f902be88a3/kfp-kubernetes-1.4.0.tar.gz", hash = "sha256:bbb2ce9230be2cbf8b344897a518cc8debe008e153277675b16fd4634e81f358", size = 43663 }
+sdist = { url = "https://files.pythonhosted.org/packages/c8/b8/d41ed305110e4348b6c0828c9e8065aafe215db9ac4165f6b02da02a276e/kfp-kubernetes-1.5.0.tar.gz", hash = "sha256:84c2080f25934d21484f7a48eadbfd1f01f213fde0feb77f65346dbc544c855f", size = 16441 }
 
 [[package]]
 name = "kfp-pipeline-spec"
