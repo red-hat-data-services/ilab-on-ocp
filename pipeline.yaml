@@ -1612,6 +1612,7 @@ deploymentSpec:
         image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:c656c74338e3d59bf265e4b2fa9c01a69c8212992fa6d4511aef52a441506e68
         resources:
           accelerator:
+            count: '1'
             resourceCount: '1'
             resourceType: '{{$.inputs.parameters[''pipelinechannel--eval_gpu_identifier'']}}'
     exec-run-mt-bench-op:
@@ -1764,6 +1765,7 @@ deploymentSpec:
         image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:c656c74338e3d59bf265e4b2fa9c01a69c8212992fa6d4511aef52a441506e68
         resources:
           accelerator:
+            count: '1'
             resourceCount: '1'
             resourceType: '{{$.inputs.parameters[''pipelinechannel--eval_gpu_identifier'']}}'
     exec-sdg-op:
@@ -3371,11 +3373,12 @@ root:
         isOptional: true
         parameterType: NUMBER_INTEGER
       train_tolerations:
-        description: Training parameter. List of tolerations applied to training pods.
+        description: Training parameter. List of tolerations applied to training and
+          eval pods.
         isOptional: true
         parameterType: LIST
 schemaVersion: 2.1.0
-sdkVersion: kfp-2.12.1
+sdkVersion: kfp-2.13.0
 ---
 platforms:
   kubernetes:
@@ -3384,102 +3387,186 @@ platforms:
         exec-data-processing-op:
           pvcMount:
           - mountPath: /model
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc-2
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc-2
           - mountPath: /data
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc
         exec-generate-metrics-report-op:
           pvcMount:
           - mountPath: /output
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc-3
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc-3
         exec-knowledge-processed-data-to-artifact-op:
           pvcMount:
           - mountPath: /data
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc
         exec-model-to-pvc-op:
           pvcMount:
           - mountPath: /model
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc-2
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc-2
         exec-pvc-to-mmlu-branch-op:
           pvcMount:
           - mountPath: /output
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc-3
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc-3
         exec-pvc-to-mt-bench-branch-op:
           pvcMount:
           - mountPath: /output
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc-3
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc-3
         exec-pvc-to-mt-bench-op:
           pvcMount:
           - mountPath: /output
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc-3
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc-3
         exec-pytorch-job-launcher-op-2:
           pvcMount:
           - mountPath: /output
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc-3
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc-3
         exec-run-final-eval-op:
+          nodeSelector:
+            nodeSelectorJson:
+              componentInputParameter: train_node_selectors
           pvcMount:
           - mountPath: /output
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc-3
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc-3
           - mountPath: /input
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc
           - mountPath: /model
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc-2
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc-2
+          tolerations:
+          - tolerationJson:
+              componentInputParameter: train_tolerations
         exec-run-mt-bench-op:
+          nodeSelector:
+            nodeSelectorJson:
+              componentInputParameter: train_node_selectors
           pvcMount:
           - mountPath: /output
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc-3
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc-3
+          tolerations:
+          - tolerationJson:
+              componentInputParameter: train_tolerations
         exec-sdg-op:
           pvcMount:
           - mountPath: /data
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc
         exec-sdg-to-artifact-op:
           pvcMount:
           - mountPath: /data
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc
         exec-skills-processed-data-to-artifact-op:
           pvcMount:
           - mountPath: /data
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc
         exec-taxonomy-to-artifact-op:
           pvcMount:
           - mountPath: /data
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc
         exec-upload-model-op:
           pvcMount:
           - mountPath: /output
+            pvcNameParameter:
+              taskOutputParameter:
+                outputParameterKey: name
+                producerTask: createpvc-3
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc-3
