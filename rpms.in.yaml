@@ -1,7 +1,7 @@
+arches:
+- x86_64
 contentOrigin:
   repofiles:
     - ubi.repo
 packages:
   - skopeo
-context:
-  containerfile: ./Dockerfile.konflux
