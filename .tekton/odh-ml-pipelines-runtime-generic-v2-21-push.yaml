@@ -57,7 +57,8 @@ spec:
       value: '{{ target_branch }}'
     - name: pathInRepo
       value: pipelines/container-build.yaml
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-odh-ml-pipelines-runtime-generic-v2-21
   workspaces:
   - name: git-auth
     secret:
