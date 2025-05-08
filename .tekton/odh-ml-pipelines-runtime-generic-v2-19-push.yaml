@@ -29,7 +29,7 @@ spec:
         - version=v2.19.1
         - io.openshift.tags=odh-ml-pipelines-runtime-generic
     - name: output-image
-      value: quay.io/rhoai/odh-ml-pipelines-runtime-generic-rhel9:{{target_branch}}
+      value: quay.io/rhoai/odh-ml-pipelines-runtime-generic-rhel8:{{target_branch}}
     - name: dockerfile
       value: Dockerfile.konflux
     - name: path-context
