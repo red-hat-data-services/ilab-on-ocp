@@ -2,11 +2,11 @@ apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   annotations:
+    build.appstudio.openshift.io/build-nudge-files: build/operator-nudging.yaml
     build.appstudio.openshift.io/repo: https://github.com/red-hat-data-services/ilab-on-ocp?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    build.appstudio.openshift.io/build-nudge-files: "build/operator-nudging.yaml"
     pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch
       == "rhoai-2.20"
   creationTimestamp: null
@@ -29,11 +29,8 @@ spec:
   - name: path-context
     value: .
   - name: prefetch-input
-    value: |
-      [ 
-        {"path": ".", "type": "rpm"}, 
-        {"type": "pip", "path": ".", "allow_binary": true, "requirements_build_files": ["requirements-build.txt"]}
-      ]
+    value: "[ \n  {\"path\": \".\", \"type\": \"rpm\"}, \n  {\"type\": \"pip\", \"path\":
+      \".\", \"allow_binary\": true, \"requirements_build_files\": [\"requirements-build.txt\"]}\n]\n"
   pipelineSpec:
     description: |
       This pipeline is ideal for building container images from a Containerfile while maintaining trust after pipeline customization.
@@ -57,7 +54,7 @@ spec:
     - name: send-slack-notification
       params:
       - name: message
-        value: "$(tasks.rhoai-init.results.slack-message-failure-text)"
+        value: $(tasks.rhoai-init.results.slack-message-failure-text)
       - name: secret-name
         value: rhoai-konflux-secret
       - name: key-name
@@ -75,7 +72,7 @@ spec:
       - input: $(tasks.status)
         operator: in
         values:
-        - "Failed"
+        - Failed
     params:
     - description: Source Repository URL
       name: git-url
@@ -150,20 +147,23 @@ spec:
     - name: rhoai-init
       params:
       - name: pipelinerun-name
-        value: "$(context.pipelineRun.name)"
+        value: $(context.pipelineRun.name)
       taskSpec:
+        metadata: {}
         results:
         - description: Notification text to be posted to slack
           name: slack-message-failure-text
+        spec: null
         steps:
-        - image: quay.io/rhoai-konflux/alpine:latest
-          name: rhoai-init
+        - computeResources: {}
           env:
           - name: slack_message
             valueFrom:
               secretKeyRef:
-                name: rhoai-konflux-secret
                 key: slack-component-failure-notification
+                name: rhoai-konflux-secret
+          image: quay.io/rhoai-konflux/alpine:latest
+          name: rhoai-init
           script: |
             pipelinerun_name=$(params.pipelinerun-name)
             target_branch={{target_branch}}
@@ -194,6 +194,8 @@ spec:
         value: $(params.rebuild)
       - name: skip-checks
         value: $(params.skip-checks)
+      runAfter:
+      - rhoai-init
       taskRef:
         params:
         - name: name
@@ -203,8 +205,6 @@ spec:
         - name: kind
           value: task
         resolver: bundles
-      runAfter:
-      - rhoai-init
     - name: clone-repository
       params:
       - name: url
@@ -370,29 +370,28 @@ spec:
         - "true"
     - name: sast-unicode-check
       params:
-        - name: image-url
-          value: $(tasks.build-image-index.results.IMAGE_URL)
-        - name: SOURCE_ARTIFACT
-          value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-        - name: CACHI2_ARTIFACT
-          value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+      - name: image-url
+        value: $(tasks.build-image-index.results.IMAGE_URL)
+      - name: SOURCE_ARTIFACT
+        value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+      - name: CACHI2_ARTIFACT
+        value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
       runAfter:
-        - build-image-index
+      - build-image-index
       taskRef:
         params:
-          - name: name
-            value: sast-unicode-check-oci-ta
-          - name: bundle
-            value: quay.io/konflux-ci/tekton-catalog/task-sast-unicode-check-oci-ta:0.2@sha256:df185dbe4e2852668f9c46f938dd752e90ea9c79696363378435a6499596c319
-          - name: kind
-            value: task
+        - name: name
+          value: sast-unicode-check-oci-ta
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-sast-unicode-check-oci-ta:0.2@sha256:df185dbe4e2852668f9c46f938dd752e90ea9c79696363378435a6499596c319
+        - name: kind
+          value: task
         resolver: bundles
       when:
-        - input: $(params.skip-checks)
-          operator: in
-          values:
-            - "false"
-      workspaces: []
+      - input: $(params.skip-checks)
+        operator: in
+        values:
+        - "false"
     - name: deprecated-base-image-check
       params:
       - name: IMAGE_URL
@@ -665,7 +664,8 @@ spec:
       optional: true
     - name: netrc
       optional: true
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-odh-ml-pipelines-runtime-generic-v2-20
   workspaces:
   - name: git-auth
     secret:
