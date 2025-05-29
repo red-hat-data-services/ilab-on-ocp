@@ -277,6 +277,10 @@ def ilab_pipeline(
     data_processing_task.after(model_to_pvc_task, sdg_task)
     data_processing_task.set_caching_options(False)
     data_processing_task.set_env_variable("XDG_CACHE_HOME", "/tmp")
+    data_processing_task.set_accelerator_type(eval_gpu_identifier)
+    data_processing_task.set_accelerator_limit(1)
+    add_toleration_json(data_processing_task, train_tolerations)
+    add_node_selector_json(data_processing_task, train_node_selectors)
 
     # Upload "skills_processed_data" and "knowledge_processed_data" artifacts to S3 without blocking the rest of the workflow
     skills_processed_data_to_artifact_task = skills_processed_data_to_artifact_op()
