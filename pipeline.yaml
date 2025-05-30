@@ -934,6 +934,11 @@ deploymentSpec:
         - name: XDG_CACHE_HOME
           value: /tmp
         image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:3e6eb035c69b204746a44b3a58b2751c20050cfb6af2ba7989ba327809f87c0b
+        resources:
+          accelerator:
+            count: '1'
+            resourceCount: '1'
+            resourceType: '{{$.inputs.parameters[''pipelinechannel--eval_gpu_identifier'']}}'
     exec-deletepvc:
       container:
         image: argostub/deletepvc
@@ -2620,8 +2625,13 @@ root:
         - sdg-op
         inputs:
           parameters:
+            accelerator_type:
+              runtimeValue:
+                constant: '{{$.inputs.parameters[''pipelinechannel--eval_gpu_identifier'']}}'
             max_batch_len:
               componentInputParameter: sdg_max_batch_len
+            pipelinechannel--eval_gpu_identifier:
+              componentInputParameter: eval_gpu_identifier
         taskInfo:
           name: data-processing-op
       deletepvc:
@@ -3395,6 +3405,9 @@ platforms:
     deploymentSpec:
       executors:
         exec-data-processing-op:
+          nodeSelector:
+            nodeSelectorJson:
+              componentInputParameter: train_node_selectors
           pvcMount:
           - mountPath: /model
             pvcNameParameter:
@@ -3412,6 +3425,9 @@ platforms:
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc
+          tolerations:
+          - tolerationJson:
+              componentInputParameter: train_tolerations
         exec-generate-metrics-report-op:
           pvcMount:
           - mountPath: /output
