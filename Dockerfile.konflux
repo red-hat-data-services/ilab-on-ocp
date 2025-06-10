@@ -1,4 +1,4 @@
-FROM registry.redhat.io/ubi8/python-312:1@sha256:d6e4b8e366425c072080aa9c147a6645836a16dfabdad930ac425a9577b2fec0
+FROM registry.redhat.io/ubi8/python-312:1@sha256:75c3f06e3f0b4f2866063c83ce051a8d1e7d55bc545df859c1fbdb7b8b8e8fd8
 
 ARG SOURCE_CODE=.
 
