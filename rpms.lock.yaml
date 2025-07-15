@@ -97,7 +97,7 @@ arches:
     sourcerpm: kmod-25-20.el8.src.rpm
   source: []
   module_metadata:
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/appstream/os/repodata/985f562bf5a4ac091a242ff9bd5d47d42b497211eb41dcf9c8f8bd32d1eaa0c2-modules.yaml.gz
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/appstream/os/repodata/111a6e41bbb7bb6c6d7e2165e262705605b7c9bc5e1e264020ff51a3572dfed8-modules.yaml.gz
     repoid: ubi-8-for-x86_64-appstream-rpms
     size: 60185
-    checksum: sha256:985f562bf5a4ac091a242ff9bd5d47d42b497211eb41dcf9c8f8bd32d1eaa0c2
+    checksum: sha256:111a6e41bbb7bb6c6d7e2165e262705605b7c9bc5e1e264020ff51a3572dfed8
