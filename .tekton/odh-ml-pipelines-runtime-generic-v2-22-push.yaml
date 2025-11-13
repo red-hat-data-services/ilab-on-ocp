@@ -28,7 +28,7 @@ spec:
     - '{{target_branch}}-{{revision}}'
   - name: additional-labels
     value: 
-    - version=v2.22.1
+    - version=v2.22.3
     - io.openshift.tags=odh-ml-pipelines-runtime-generic
   - name: output-image
     value: quay.io/rhoai/odh-ml-pipelines-runtime-generic-rhel9:{{target_branch}}
