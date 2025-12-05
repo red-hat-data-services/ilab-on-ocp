@@ -15,16 +15,9 @@ RUN echo "Installing Runtime Dependencies" && \
 RUN if [[ "$(uname -m)" == "ppc64le" ]]; then \
     cp /cachi2/output/deps/generic/cmake-3.31.0.tar.gz /tmp/ && \
     tar -xzf /tmp/cmake-3.31.0.tar.gz -C /tmp && \
-    cd /tmp/cmake-3.31.0 && ./bootstrap && make && make install && cd .. && rm -rf cmake-3.31.0 && \ 
+    cd /tmp/cmake-3.31.0 && ./bootstrap && make && make install && cd .. && rm -rf cmake-3.31.0 && \
     pip install setuptools wheel && \
-    cp /cachi2/output/deps/generic/python-crc32c-v1.7.1.tar.gz /tmp/ && \
-    tar -xzf /tmp/python-crc32c-v1.7.1.tar.gz -C /tmp && \
-    cp /cachi2/output/deps/generic/crc32-1.1.2.tar.gz /tmp && \
-    tar -xzf /tmp/crc32-1.1.2.tar.gz -C /tmp/python-crc32c-1.7.1/google_crc32c && \
-    mv /tmp/python-crc32c-1.7.1/google_crc32c/crc32c-1.1.2/* /tmp/python-crc32c-1.7.1/google_crc32c && \
-    cd /tmp/python-crc32c-1.7.1/google_crc32c && \
-    rm -rf /tmp/trial/python-crc32c-1.7.1/google_crc32c/crc32c-1.1.2 && \
-    cd /tmp/python-crc32c-1.7.1/google_crc32c && \
+    cd python-crc32c/google_crc32c && \
     mkdir build && cd build && \
     export CRC32C_INSTALL_PREFIX=/usr/local && /usr/local/bin/cmake   -DCMAKE_BUILD_TYPE=Release   -DCRC32C_BUILD_TESTS=no   -DCRC32C_BUILD_BENCHMARKS=no   -DBUILD_SHARED_LIBS=yes -DCMAKE_INSTALL_PREFIX=${CRC32C_INSTALL_PREFIX}   .. && \
     make all install && cd ../.. && \
