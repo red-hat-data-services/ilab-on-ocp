@@ -41,7 +41,7 @@ spec:
     value: |
       [
         {"path": ".", "type": "rpm"}, 
-        {"type": "pip", "path": ".", "allow_binary": true, "requirements_build_files": ["requirements-build.txt"]}
+        {"type": "pip", "path": ".", "allow_binary": true, "requirements_build_files": ["requirements.txt", "requirements-build.txt"]}
       ]
   - name: build-source-image
     value: true
