@@ -1,15 +1,6 @@
 metadata:
   version: "1.0"
 artifacts:
-  - download_url: "https://github.com/googleapis/python-crc32c/archive/refs/tags/v1.7.1.tar.gz"
-    checksum: "sha256:6ba53bc3575dcbeae21a0254e98957495193a2ecfe51d5f7091d9d4bf92d1af2"
-    filename: "python-crc32c-v1.7.1.tar.gz"
-
   - download_url: "https://cmake.org/files/v3.31/cmake-3.31.0.tar.gz"
     checksum: "sha256:300b71db6d69dcc1ab7c5aae61cbc1aa2778a3e00cbd918bc720203e311468c3"
     filename: "cmake-3.31.0.tar.gz"
-
-  - download_url: "https://github.com/google/crc32c/archive/refs/tags/1.1.2.tar.gz"
-    checksum: "sha256:ac07840513072b7fcebda6e821068aa04889018f24e10e46181068fb214d7e56"
-    filename: "crc32-1.1.2.tar.gz"
-
