@@ -1,0 +1,3 @@
+[submodule "python-crc32c"]
+	path = python-crc32c
+	url = ./python-crc32c
