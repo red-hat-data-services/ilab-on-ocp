@@ -12,16 +12,15 @@ USER root
 RUN echo "Installing Runtime Dependencies" && \
     dnf install -y skopeo && \
     if [[ $(uname -m) == "ppc64le" ]]; then \
-    dnf install gcc-toolset-13 make && source /opt/rh/gcc-toolset-13/enable && \
     curl -L https://cmake.org/files/v3.31/cmake-3.31.0.tar.gz | tar xz && \
     cd cmake-3.31.0 && ./bootstrap && make && make install && cd .. && rm -rf cmake-3.31.0; \
     fi; \
     dnf clean all
 
-
+COPY python-crc32c/ python-crc32c/ 
 RUN if [[ $(uname -m) == "ppc64le" ]]; then \
-    pip install setuptools wheel && git clone --recurse-submodules https://github.com/googleapis/python-crc32c -b v1.7.1 && \
-    cd  python-crc32c/google_crc32c && mkdir build && cd  build && \
+    pip install setuptools wheel && cd python-crc32c  && \
+    cd google_crc32c && mkdir build && cd build && \
     export CRC32C_INSTALL_PREFIX=/usr/local && /usr/local/bin/cmake   -DCMAKE_BUILD_TYPE=Release   -DCRC32C_BUILD_TESTS=no   -DCRC32C_BUILD_BENCHMARKS=no   -DBUILD_SHARED_LIBS=yes -DCMAKE_INSTALL_PREFIX=${CRC32C_INSTALL_PREFIX}   .. && \
     make all install && cd ../.. && \
     python setup.py build_ext --include-dirs=${CRC32C_INSTALL_PREFIX}/include --library-dirs=${CRC32C_INSTALL_PREFIX}/lib64 --rpath=${CRC32C_INSTALL_PREFIX}/lib64 bdist_wheel --dist-dir dist/ && \

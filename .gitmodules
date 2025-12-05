@@ -1,0 +1,4 @@
+[submodule "python-crc32c"]
+	path = python-crc32c
+	url = https://github.com/googleapis/python-crc32c
+	branch = v1.7.1
