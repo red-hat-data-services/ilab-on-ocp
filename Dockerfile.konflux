@@ -13,6 +13,7 @@ RUN echo "Installing Runtime Dependencies" && \
     dnf install -y skopeo && dnf clean all
 
 RUN if [[ "$(uname -m)" == "ppc64le" ]]; then \
+    dnf install -y tar && \
     cp /cachi2/output/deps/generic/cmake-3.31.0.tar.gz /tmp/ &&
     tar -xzf /tmp/cmake-3.31.0.tar.gz -C /tmp && \
     cd /tmp/cmake-3.31.0 && ./bootstrap && make && make install && cd .. && rm -rf cmake-3.31.0 && \ 
