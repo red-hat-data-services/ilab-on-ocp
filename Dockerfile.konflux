@@ -18,15 +18,15 @@ RUN echo "Installing Runtime Dependencies" && \
     dnf clean all
 
 #COPY python-crc32c/ python-crc32c/ 
-RUN if [[ $(uname -m) == "ppc64le" ]]; then \
+#RUN if [[ $(uname -m) == "ppc64le" ]]; then \
 #    pip install setuptools wheel && cd python-crc32c  && \
 #    cd google_crc32c && mkdir build && cd build && \
 #    export CRC32C_INSTALL_PREFIX=/usr/local && /usr/local/bin/cmake   -DCMAKE_BUILD_TYPE=Release   -DCRC32C_BUILD_TESTS=no   -DCRC32C_BUILD_BENCHMARKS=no   -DBUILD_SHARED_LIBS=yes -DCMAKE_INSTALL_PREFIX=${CRC32C_INSTALL_PREFIX}   .. && \
 #    make all install && cd ../.. && \
 #    python setup.py build_ext --include-dirs=${CRC32C_INSTALL_PREFIX}/include --library-dirs=${CRC32C_INSTALL_PREFIX}/lib64 --rpath=${CRC32C_INSTALL_PREFIX}/lib64 bdist_wheel --dist-dir dist/ && \
 #    pip install dist/*.whl && cd .. && rm -rf python-crc32c; \
-    fi; \
-    pip install --no-cache-dir -r requirements.txt && \
+#    fi; \
+RUN  pip install --no-cache-dir -r requirements.txt && \
     chgrp -R 0 . && \
     chmod -R g=u . && \
     mv mixtral-tokenizer /models
