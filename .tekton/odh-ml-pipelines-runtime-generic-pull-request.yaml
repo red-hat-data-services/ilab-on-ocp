@@ -40,7 +40,8 @@ spec:
   - name: prefetch-input
     value: |
       [
-        {"path": ".", "type": "rpm"}, 
+        {"path": ".", "type": "rpm"},
+        {"type": "generic", "path": "."},
         {"type": "pip", "path": ".", "allow_binary": true, "requirements_build_files": ["requirements.txt", "requirements-build.txt"]}
       ]
   - name: build-source-image

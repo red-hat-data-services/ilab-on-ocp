@@ -1,0 +1,6 @@
+metadata:
+  version: "1.0"
+artifacts:
+  - download_url: "https://github.com/googleapis/python-crc32c/archive/refs/tags/v1.7.1.tar.gz"
+    checksum: "sha256:6ba53bc3575dcbeae21a0254e98957495193a2ecfe51d5f7091d9d4bf92d1af2"
+    filename: "python-crc32c-v1.7.1.tar.gz"
