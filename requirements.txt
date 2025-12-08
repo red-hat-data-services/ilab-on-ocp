@@ -830,7 +830,7 @@ python-dateutil==2.9.0.post0 \
     #   kfp-server-api
     #   kubernetes
     #   model-registry
---extra-index-url=https://wheels.developerfirst.ibm.com/
+--index-url=https://wheels.developerfirst.ibm.com/
 pyyaml==6.0.2 \
     --hash=sha256:01179a4a8559ab5de078078f37e5c1a30d76bb88519906844fd7bdea1b7729ff \
     --hash=sha256:0833f8694549e586547b576dcfaba4a6b55b9e96098b36cdc7ebefe667dfed48 \
