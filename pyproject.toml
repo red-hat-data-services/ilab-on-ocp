@@ -7,8 +7,6 @@ requires-python = ">=3.12"
 dependencies = [
     "click>=8.1.7",
     "httpx==0.28.1",
-    "kfp-kubernetes==1.5.0",
-    "kfp==2.13.0",
     "kubernetes==30.1.0",
     "model-registry==0.2.17",
     "olot==0.1.2",
@@ -19,4 +17,10 @@ dependencies = [
 lint = [
     "ruff>=0.8.2",
     "pre-commit>=4.0.1",
+]
+
+[project.optional-dependencies]
+kfp = [
+    "kfp==2.13.0",
+    "kfp-kubernetes==1.5.0",
 ]
