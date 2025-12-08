@@ -18,6 +18,7 @@ RUN if [[ "$(uname -m)" == "ppc64le" ]]; then \
     cd /tmp/cmake-3.31.0 && ./bootstrap && make && make install && cd .. && rm -rf cmake-3.31.0 && \
     cd /opt/app-root/src/pipelines/distributed-ilab && \
     pip install setuptools wheel && \
+    cd pyyaml && python setup.py install && cd .. && \
     cd python-crc32c/google_crc32c && \
     mkdir build && cd build && \
     export CRC32C_INSTALL_PREFIX=/usr/local && /usr/local/bin/cmake   -DCMAKE_BUILD_TYPE=Release   -DCRC32C_BUILD_TESTS=no   -DCRC32C_BUILD_BENCHMARKS=no   -DBUILD_SHARED_LIBS=yes -DCMAKE_INSTALL_PREFIX=${CRC32C_INSTALL_PREFIX}   .. && \

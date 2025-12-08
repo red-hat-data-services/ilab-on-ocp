@@ -1,3 +1,8 @@
 [submodule "python-crc32c"]
 	path = python-crc32c
 	url = https://github.com/googleapis/python-crc32c
+
+[submodule "pyyaml"]
+        path = pyyaml
+	url = https://github.com/yaml/pyyaml.git
+	branch = 6.0.2
