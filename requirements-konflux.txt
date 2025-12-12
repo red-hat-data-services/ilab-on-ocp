@@ -282,6 +282,10 @@ click==8.3.1 \
     # via
     #   ilab-on-ocp (pyproject.toml)
     #   olot
+docstring-parser==0.16 \
+    --hash=sha256:538beabd0af1e2db0146b6bd3caa526c35a34d61af9fd2887f3a8a27a739aa6e \
+    --hash=sha256:bf0a1387354d3691d102edef7ec124f219ef639982d096e26e3b60aeffa90637
+    # via ilab-on-ocp (pyproject.toml)
 eval-type-backport==0.2.2 \
     --hash=sha256:cb6ad7c393517f476f96d456d0412ea80f0a8cf96f6892834cd9340149111b0a \
     --hash=sha256:f0576b4cf01ebb5bd358d02314d31846af5e07678387486e2c798af0e7d849c1
