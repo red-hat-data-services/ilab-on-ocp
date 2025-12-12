@@ -15,7 +15,7 @@ USER root
 RUN echo "Installing Runtime Dependencies" && \
     dnf install -y skopeo && dnf clean all && \
     pip install --no-cache-dir -r requirements-konflux.txt && \
-    pip install kfp --no-deps && \
+    pip install kfp && \
     chgrp -R 0 . && \
     chmod -R g=u . && \
     mv mixtral-tokenizer /models
