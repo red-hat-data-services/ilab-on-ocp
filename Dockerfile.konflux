@@ -9,18 +9,12 @@ COPY ${SOURCE_CODE} .
 
 USER root
 
-# pip install `kfp --no-deps` to support install_kfp_package=False but not pull
-# in other dependencies. This works because at runtime, because kfp is imported with the
-#_KFP_RUNTIME=true env variable set.
 RUN echo "Installing Runtime Dependencies" && \
     dnf install -y skopeo && dnf clean all && \
-    pip install --no-cache-dir -r requirements-konflux.txt && \
-    pip install kfp --no-deps && \
+    pip install --no-cache-dir -r requirements.txt && \
     chgrp -R 0 . && \
     chmod -R g=u . && \
     mv mixtral-tokenizer /models
-# Verify that KFP can be imported like it would be at runtime.
-RUN _KFP_RUNTIME=true python -c "import kfp"
 
 USER default
 
