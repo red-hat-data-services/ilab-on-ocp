@@ -7,5 +7,12 @@ contentOrigin:
     - ubi.repo
 packages:
   - skopeo
+  - gcc
+  - gcc-c++
+  - python3.12-devel
+  - redhat-rpm-config
+  - make
+  - cmake
+  - ninja-build
 context:
   containerfile: Dockerfile.konflux

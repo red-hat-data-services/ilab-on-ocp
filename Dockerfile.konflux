@@ -10,7 +10,10 @@ COPY ${SOURCE_CODE} .
 USER root
 
 RUN echo "Installing Runtime Dependencies" && \
-    dnf install -y skopeo && dnf clean all && \
+    dnf install -y skopeo gcc gcc-c++ python3.12-devel redhat-rpm-config make cmake ninja-build && dnf clean all && \
+    if [ "$(uname -m)" = "ppc64le" ]; then \
+        pip install --no-cache-dir --no-deps vendor/google_crc32c-1.7.1.tar.gz vendor/pyyaml-6.0.2.tar.gz; \
+    fi && \
     pip install --no-cache-dir -r requirements.txt && \
     chgrp -R 0 . && \
     chmod -R g=u . && \
