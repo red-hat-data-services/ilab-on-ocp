@@ -323,7 +323,7 @@ def test_model_connection(secret_name: str):
 
     model_endpoint = ""
     model_name = ""
-    model_api_key = ""
+    model_api_token = ""
     with open(
         "/var/run/secrets/kubernetes.io/serviceaccount/namespace", "r"
     ) as namespace_path:
@@ -335,19 +335,19 @@ def test_model_connection(secret_name: str):
         try:
             secret = core_api.read_namespaced_secret(secret_name, namespace)
             print(f"Reading secret {secret_name} data...")
-            model_api_key = base64.b64decode(secret.data["api_token"]).decode("utf-8")
+            model_api_token = base64.b64decode(secret.data["api_token"]).decode("utf-8")
             model_name = base64.b64decode(secret.data["model_name"]).decode("utf-8")
             model_endpoint = base64.b64decode(secret.data["endpoint"]).decode("utf-8")
         except (ApiException, KeyError) as e:
             print(f"""
             ############################################ ERROR #####################################################
             # Error reading {secret_name}. Ensure you created a secret with this name in namespace {namespace} and #
-            # has 'api_key', 'model_name', and 'endpoint' present                                                  #
+            # has 'api_token', 'model_name', and 'endpoint' present                                                  #
             ########################################################################################################
             """)
             sys.exit(1)
 
-    request_auth = {"Authorization": f"Bearer {model_api_key}"}
+    request_auth = {"Authorization": f"Bearer {model_api_token}"}
     request_body = {
         "model": model_name,
         "messages": [{"role": "user", "content": "tell me a funny joke."}],
