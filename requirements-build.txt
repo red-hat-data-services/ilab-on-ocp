@@ -93,7 +93,7 @@ typing-extensions==4.13.2
     #   mypy
     #   pydantic-core
     #   setuptools-scm
-wheel==0.45.1
+wheel==0.46.2
     # via
     #   cachetools
     #   eval-type-backport
