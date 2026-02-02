@@ -4,27 +4,20 @@ lockfileVendor: redhat
 arches:
 - arch: aarch64
   packages:
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/appstream/os/Packages/c/cmake-3.26.5-2.el9.aarch64.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/appstream/os/Packages/c/cmake-3.26.5-3.el9_7.aarch64.rpm
     repoid: ubi-9-for-aarch64-appstream-rpms
-    size: 7432689
-    checksum: sha256:6ac0e5e9a4fd761f8688678ac83580c7eebeacf6c241bd8089d72c4a477b22c3
+    size: 7390386
+    checksum: sha256:a44b54f4b495bb869d9facbf6e71444cb1b0bc8e1048a7c5e598c783d688bf5f
     name: cmake
-    evr: 3.26.5-2.el9
-    sourcerpm: cmake-3.26.5-2.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/appstream/os/Packages/c/cmake-data-3.26.5-2.el9.noarch.rpm
+    evr: 3.26.5-3.el9_7
+    sourcerpm: cmake-3.26.5-3.el9_7.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/appstream/os/Packages/c/cmake-data-3.26.5-3.el9_7.noarch.rpm
     repoid: ubi-9-for-aarch64-appstream-rpms
-    size: 2488227
-    checksum: sha256:84da65a7b8921f031d15903d91c5967022620f9e96b7493c8ab8024014755ee7
+    size: 2483069
+    checksum: sha256:6b8afdf96d315c36df391e0f170d5ba845d11704549c4ffa3533aa43922d722e
     name: cmake-data
-    evr: 3.26.5-2.el9
-    sourcerpm: cmake-3.26.5-2.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/appstream/os/Packages/c/cmake-rpm-macros-3.26.5-2.el9.noarch.rpm
-    repoid: ubi-9-for-aarch64-appstream-rpms
-    size: 12250
-    checksum: sha256:1c74969c8a4f21851f5b89f25ac55c689b75bed1318d0435fc3a14a49c39d0e3
-    name: cmake-rpm-macros
-    evr: 3.26.5-2.el9
-    sourcerpm: cmake-3.26.5-2.el9.src.rpm
+    evr: 3.26.5-3.el9_7
+    sourcerpm: cmake-3.26.5-3.el9_7.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/appstream/os/Packages/c/containers-common-1-135.el9_7.aarch64.rpm
     repoid: ubi-9-for-aarch64-appstream-rpms
     size: 156886
@@ -53,13 +46,13 @@ arches:
     name: crun
     evr: 1.23.1-2.el9_7
     sourcerpm: crun-1.23.1-2.el9_7.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/appstream/os/Packages/f/fuse-overlayfs-1.15-1.el9.aarch64.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/appstream/os/Packages/f/fuse-overlayfs-1.16-1.el9_7.aarch64.rpm
     repoid: ubi-9-for-aarch64-appstream-rpms
-    size: 64506
-    checksum: sha256:ca71ef4c89e10d75a46257c190e7274e2354092d18dbceba95a701e3f3df7c61
+    size: 63393
+    checksum: sha256:7e26a4ef20d9e376a3f84b78d36d1ad6c66ce154e7dfef8757b6aec471a86a4c
     name: fuse-overlayfs
-    evr: 1.15-1.el9
-    sourcerpm: fuse-overlayfs-1.15-1.el9.src.rpm
+    evr: 1.16-1.el9_7
+    sourcerpm: fuse-overlayfs-1.16-1.el9_7.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/appstream/os/Packages/f/fuse3-3.10.2-9.el9.aarch64.rpm
     repoid: ubi-9-for-aarch64-appstream-rpms
     size: 58189
@@ -159,12 +152,12 @@ arches:
     evr: 1.10.2-6.el9
     sourcerpm: ninja-build-1.10.2-6.el9.src.rpm
   source:
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/appstream/source/SRPMS/Packages/c/cmake-3.26.5-2.el9.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/appstream/source/SRPMS/Packages/c/cmake-3.26.5-3.el9_7.src.rpm
     repoid: ubi-9-for-aarch64-appstream-source-rpms
-    size: 10671338
-    checksum: sha256:2f86bb96562eaf679969c2716738fbdfcc8a3966ecc3bb6317596fe2e214ea2b
+    size: 10668242
+    checksum: sha256:5cdbdb206f7c94f6a2e414651615e299bb78f535dc8023c243bbbb19809e53f6
     name: cmake
-    evr: 3.26.5-2.el9
+    evr: 3.26.5-3.el9_7
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/appstream/source/SRPMS/Packages/c/containers-common-1-135.el9_7.src.rpm
     repoid: ubi-9-for-aarch64-appstream-source-rpms
     size: 168194
@@ -183,12 +176,12 @@ arches:
     checksum: sha256:19500c02ad50c34f29a7c69d69fb48a7675c9915a0656c272b82ccbf93bd32bd
     name: crun
     evr: 1.23.1-2.el9_7
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/appstream/source/SRPMS/Packages/f/fuse-overlayfs-1.15-1.el9.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/appstream/source/SRPMS/Packages/f/fuse-overlayfs-1.16-1.el9_7.src.rpm
     repoid: ubi-9-for-aarch64-appstream-source-rpms
-    size: 128348
-    checksum: sha256:ad7abdc85910089902f74488e2571b87d78f6f77ade1d3ba26827b3374086163
+    size: 127644
+    checksum: sha256:8e2ae14c212d0dde5afe0381b609c9bdb9f97bae787ca05a16c3c2c33b54547c
     name: fuse-overlayfs
-    evr: 1.15-1.el9
+    evr: 1.16-1.el9_7
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/appstream/source/SRPMS/Packages/l/libnet-1.2-7.el9.src.rpm
     repoid: ubi-9-for-aarch64-appstream-source-rpms
     size: 611553
@@ -264,27 +257,20 @@ arches:
   module_metadata: []
 - arch: ppc64le
   packages:
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/appstream/os/Packages/c/cmake-3.26.5-2.el9.ppc64le.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/appstream/os/Packages/c/cmake-3.26.5-3.el9_7.ppc64le.rpm
     repoid: ubi-9-for-ppc64le-appstream-rpms
-    size: 10323617
-    checksum: sha256:67175cbc75c192be2b0d3783221a4fd6ea5bb032140112f4b712206be9c0cb14
+    size: 10301647
+    checksum: sha256:47276164b1e074431390aabd24ec532694210f0a142e9ad3e606c1e546e5615b
     name: cmake
-    evr: 3.26.5-2.el9
-    sourcerpm: cmake-3.26.5-2.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/appstream/os/Packages/c/cmake-data-3.26.5-2.el9.noarch.rpm
+    evr: 3.26.5-3.el9_7
+    sourcerpm: cmake-3.26.5-3.el9_7.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/appstream/os/Packages/c/cmake-data-3.26.5-3.el9_7.noarch.rpm
     repoid: ubi-9-for-ppc64le-appstream-rpms
-    size: 2488227
-    checksum: sha256:84da65a7b8921f031d15903d91c5967022620f9e96b7493c8ab8024014755ee7
+    size: 2483069
+    checksum: sha256:6b8afdf96d315c36df391e0f170d5ba845d11704549c4ffa3533aa43922d722e
     name: cmake-data
-    evr: 3.26.5-2.el9
-    sourcerpm: cmake-3.26.5-2.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/appstream/os/Packages/c/cmake-rpm-macros-3.26.5-2.el9.noarch.rpm
-    repoid: ubi-9-for-ppc64le-appstream-rpms
-    size: 12250
-    checksum: sha256:1c74969c8a4f21851f5b89f25ac55c689b75bed1318d0435fc3a14a49c39d0e3
-    name: cmake-rpm-macros
-    evr: 3.26.5-2.el9
-    sourcerpm: cmake-3.26.5-2.el9.src.rpm
+    evr: 3.26.5-3.el9_7
+    sourcerpm: cmake-3.26.5-3.el9_7.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/appstream/os/Packages/c/containers-common-1-135.el9_7.ppc64le.rpm
     repoid: ubi-9-for-ppc64le-appstream-rpms
     size: 156946
@@ -313,13 +299,13 @@ arches:
     name: crun
     evr: 1.23.1-2.el9_7
     sourcerpm: crun-1.23.1-2.el9_7.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/appstream/os/Packages/f/fuse-overlayfs-1.15-1.el9.ppc64le.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/appstream/os/Packages/f/fuse-overlayfs-1.16-1.el9_7.ppc64le.rpm
     repoid: ubi-9-for-ppc64le-appstream-rpms
-    size: 70213
-    checksum: sha256:637cc6a5b98682ef3c2a1cb8ec5a882861601261e390dee00db9e07868108d61
+    size: 69175
+    checksum: sha256:9df6b647cd0e1cf6567184647117ffd2e8180b56f19a2cc07815a8b49f387913
     name: fuse-overlayfs
-    evr: 1.15-1.el9
-    sourcerpm: fuse-overlayfs-1.15-1.el9.src.rpm
+    evr: 1.16-1.el9_7
+    sourcerpm: fuse-overlayfs-1.16-1.el9_7.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/appstream/os/Packages/f/fuse3-3.10.2-9.el9.ppc64le.rpm
     repoid: ubi-9-for-ppc64le-appstream-rpms
     size: 60949
@@ -419,12 +405,12 @@ arches:
     evr: 1.10.2-6.el9
     sourcerpm: ninja-build-1.10.2-6.el9.src.rpm
   source:
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/appstream/source/SRPMS/Packages/c/cmake-3.26.5-2.el9.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/appstream/source/SRPMS/Packages/c/cmake-3.26.5-3.el9_7.src.rpm
     repoid: ubi-9-for-ppc64le-appstream-source-rpms
-    size: 10671338
-    checksum: sha256:2f86bb96562eaf679969c2716738fbdfcc8a3966ecc3bb6317596fe2e214ea2b
+    size: 10668242
+    checksum: sha256:5cdbdb206f7c94f6a2e414651615e299bb78f535dc8023c243bbbb19809e53f6
     name: cmake
-    evr: 3.26.5-2.el9
+    evr: 3.26.5-3.el9_7
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/appstream/source/SRPMS/Packages/c/containers-common-1-135.el9_7.src.rpm
     repoid: ubi-9-for-ppc64le-appstream-source-rpms
     size: 168194
@@ -443,12 +429,12 @@ arches:
     checksum: sha256:19500c02ad50c34f29a7c69d69fb48a7675c9915a0656c272b82ccbf93bd32bd
     name: crun
     evr: 1.23.1-2.el9_7
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/appstream/source/SRPMS/Packages/f/fuse-overlayfs-1.15-1.el9.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/appstream/source/SRPMS/Packages/f/fuse-overlayfs-1.16-1.el9_7.src.rpm
     repoid: ubi-9-for-ppc64le-appstream-source-rpms
-    size: 128348
-    checksum: sha256:ad7abdc85910089902f74488e2571b87d78f6f77ade1d3ba26827b3374086163
+    size: 127644
+    checksum: sha256:8e2ae14c212d0dde5afe0381b609c9bdb9f97bae787ca05a16c3c2c33b54547c
     name: fuse-overlayfs
-    evr: 1.15-1.el9
+    evr: 1.16-1.el9_7
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/appstream/source/SRPMS/Packages/l/libnet-1.2-7.el9.src.rpm
     repoid: ubi-9-for-ppc64le-appstream-source-rpms
     size: 611553
@@ -524,27 +510,20 @@ arches:
   module_metadata: []
 - arch: x86_64
   packages:
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/appstream/os/Packages/c/cmake-3.26.5-2.el9.x86_64.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/appstream/os/Packages/c/cmake-3.26.5-3.el9_7.x86_64.rpm
     repoid: ubi-9-for-x86_64-appstream-rpms
-    size: 9159462
-    checksum: sha256:f553370cb02b87e7388697468256556e765b102c2fcb56be6bc250cb2351e8ad
+    size: 9138295
+    checksum: sha256:b633e1bff169d2965bb40c3a5e1e0260f0ddd64ea8cb5fa61bc213eb070be869
     name: cmake
-    evr: 3.26.5-2.el9
-    sourcerpm: cmake-3.26.5-2.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/appstream/os/Packages/c/cmake-data-3.26.5-2.el9.noarch.rpm
+    evr: 3.26.5-3.el9_7
+    sourcerpm: cmake-3.26.5-3.el9_7.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/appstream/os/Packages/c/cmake-data-3.26.5-3.el9_7.noarch.rpm
     repoid: ubi-9-for-x86_64-appstream-rpms
-    size: 2488227
-    checksum: sha256:84da65a7b8921f031d15903d91c5967022620f9e96b7493c8ab8024014755ee7
+    size: 2483069
+    checksum: sha256:6b8afdf96d315c36df391e0f170d5ba845d11704549c4ffa3533aa43922d722e
     name: cmake-data
-    evr: 3.26.5-2.el9
-    sourcerpm: cmake-3.26.5-2.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/appstream/os/Packages/c/cmake-rpm-macros-3.26.5-2.el9.noarch.rpm
-    repoid: ubi-9-for-x86_64-appstream-rpms
-    size: 12250
-    checksum: sha256:1c74969c8a4f21851f5b89f25ac55c689b75bed1318d0435fc3a14a49c39d0e3
-    name: cmake-rpm-macros
-    evr: 3.26.5-2.el9
-    sourcerpm: cmake-3.26.5-2.el9.src.rpm
+    evr: 3.26.5-3.el9_7
+    sourcerpm: cmake-3.26.5-3.el9_7.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/appstream/os/Packages/c/containers-common-1-135.el9_7.x86_64.rpm
     repoid: ubi-9-for-x86_64-appstream-rpms
     size: 156920
@@ -573,13 +552,13 @@ arches:
     name: crun
     evr: 1.23.1-2.el9_7
     sourcerpm: crun-1.23.1-2.el9_7.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/appstream/os/Packages/f/fuse-overlayfs-1.15-1.el9.x86_64.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/appstream/os/Packages/f/fuse-overlayfs-1.16-1.el9_7.x86_64.rpm
     repoid: ubi-9-for-x86_64-appstream-rpms
-    size: 68396
-    checksum: sha256:62c90f4005f8887e7be48827f5b3212d7ceec9479f1e4047e79740793371d3a6
+    size: 67299
+    checksum: sha256:e5069c6983d99bbd995748e9cd50712b8daaef07750d270c65246278b71fc37a
     name: fuse-overlayfs
-    evr: 1.15-1.el9
-    sourcerpm: fuse-overlayfs-1.15-1.el9.src.rpm
+    evr: 1.16-1.el9_7
+    sourcerpm: fuse-overlayfs-1.16-1.el9_7.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/appstream/os/Packages/f/fuse3-3.10.2-9.el9.x86_64.rpm
     repoid: ubi-9-for-x86_64-appstream-rpms
     size: 58706
@@ -679,12 +658,12 @@ arches:
     evr: 1.10.2-6.el9
     sourcerpm: ninja-build-1.10.2-6.el9.src.rpm
   source:
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/appstream/source/SRPMS/Packages/c/cmake-3.26.5-2.el9.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/appstream/source/SRPMS/Packages/c/cmake-3.26.5-3.el9_7.src.rpm
     repoid: ubi-9-for-x86_64-appstream-source-rpms
-    size: 10671338
-    checksum: sha256:2f86bb96562eaf679969c2716738fbdfcc8a3966ecc3bb6317596fe2e214ea2b
+    size: 10668242
+    checksum: sha256:5cdbdb206f7c94f6a2e414651615e299bb78f535dc8023c243bbbb19809e53f6
     name: cmake
-    evr: 3.26.5-2.el9
+    evr: 3.26.5-3.el9_7
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/appstream/source/SRPMS/Packages/c/containers-common-1-135.el9_7.src.rpm
     repoid: ubi-9-for-x86_64-appstream-source-rpms
     size: 168194
@@ -703,12 +682,12 @@ arches:
     checksum: sha256:19500c02ad50c34f29a7c69d69fb48a7675c9915a0656c272b82ccbf93bd32bd
     name: crun
     evr: 1.23.1-2.el9_7
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/appstream/source/SRPMS/Packages/f/fuse-overlayfs-1.15-1.el9.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/appstream/source/SRPMS/Packages/f/fuse-overlayfs-1.16-1.el9_7.src.rpm
     repoid: ubi-9-for-x86_64-appstream-source-rpms
-    size: 128348
-    checksum: sha256:ad7abdc85910089902f74488e2571b87d78f6f77ade1d3ba26827b3374086163
+    size: 127644
+    checksum: sha256:8e2ae14c212d0dde5afe0381b609c9bdb9f97bae787ca05a16c3c2c33b54547c
     name: fuse-overlayfs
-    evr: 1.15-1.el9
+    evr: 1.16-1.el9_7
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/appstream/source/SRPMS/Packages/l/libnet-1.2-7.el9.src.rpm
     repoid: ubi-9-for-x86_64-appstream-source-rpms
     size: 611553

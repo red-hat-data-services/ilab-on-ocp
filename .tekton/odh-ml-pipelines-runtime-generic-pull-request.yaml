@@ -22,6 +22,8 @@ spec:
     value: '{{source_url}}'
   - name: revision
     value: '{{revision}}'
+  - name: rhoai-version
+    value: "2.25.0"
   - name: additional-tags
     value:
     - 'pr-{{pull_request_number}}-into-{{target_branch}}'
