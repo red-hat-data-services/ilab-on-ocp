@@ -1,0 +1,229 @@
+name: Regenerate RPM Lockfile
+
+on:
+  pull_request:
+    paths:
+      - 'Dockerfile.konflux'
+      - 'rpms.in.yaml'
+    branches:
+      - main
+      - rhoai-2.25
+      - rhoai-2.22
+      - rhoai-2.16
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to test on (leave empty for current branch)'
+        required: false
+        type: string
+      force_regenerate:
+        description: 'Force regeneration even if Dockerfile.konflux unchanged'
+        required: false
+        default: 'false'
+        type: boolean
+
+concurrency:
+  group: regenerate-rpm-lockfile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regenerate-lockfile:
+    runs-on: ubuntu-latest
+    # Only run on Renovate PRs or manual dispatch
+    if: |
+      github.event.pull_request.head.repo.full_name == github.repository ||
+      startsWith(github.event.pull_request.head.ref, 'renovate/') ||
+      github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Get PR information
+        id: pr_info
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = '${{ github.event.inputs.pr_number }}';
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: parseInt(prNumber)
+            });
+            core.setOutput('head_ref', pr.data.head.ref);
+            core.setOutput('head_sha', pr.data.head.sha);
+            core.setOutput('base_sha', pr.data.base.sha);
+            core.setOutput('pr_number', prNumber);
+            core.setOutput('head_repo', pr.data.head.repo.full_name);
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number != '' && steps.pr_info.outputs.head_ref || github.event.pull_request.head.ref || github.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Check if Dockerfile.konflux changed
+        id: check_changes
+        if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number != '')
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            base_sha="${{ github.event.pull_request.base.sha }}"
+            head_sha="${{ github.event.pull_request.head.sha }}"
+          else
+            base_sha="${{ steps.pr_info.outputs.base_sha }}"
+            head_sha="${{ steps.pr_info.outputs.head_sha }}"
+          fi
+          
+          if git diff --name-only ${base_sha} ${head_sha} | grep -q "Dockerfile.konflux"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Skip if no changes
+        if: |
+          (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number != '')) &&
+          steps.check_changes.outputs.changed == 'false' &&
+          github.event.inputs.force_regenerate != 'true'
+        run: |
+          echo "Dockerfile.konflux not changed, skipping regeneration"
+          echo "Use 'Force regeneration' option to regenerate anyway"
+          exit 0
+
+      - name: Set up Podman
+        uses: containers/podman-action@v1
+        with:
+          podman-version: latest
+
+      - name: Build rpm-lockfile-prototype container
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/konflux-ci/rpm-lockfile-prototype/refs/heads/main/Containerfile \
+            | podman build -t localhost/rpm-lockfile-prototype -
+
+      - name: Regenerate RPM lockfile
+        run: |
+          container_dir=/work
+          podman run --rm \
+            -v ${PWD}:${container_dir} \
+            localhost/rpm-lockfile-prototype:latest \
+            --outfile=${container_dir}/rpms.lock.yaml \
+            ${container_dir}/rpms.in.yaml
+
+      - name: Check for changes
+        id: git_diff
+        run: |
+          if git diff --quiet rpms.lock.yaml; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No changes to rpms.lock.yaml"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Changes detected in rpms.lock.yaml"
+            git diff rpms.lock.yaml | head -100
+          fi
+
+      - name: Commit changes
+        if: steps.git_diff.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add rpms.lock.yaml
+          
+          # Determine PR number for commit message
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            PR_NUM="${{ github.event.pull_request.number }}"
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ github.event.inputs.pr_number }}" != "" ]; then
+            PR_NUM="${{ github.event.inputs.pr_number }}"
+          else
+            PR_NUM="N/A"
+          fi
+          
+          git commit -m "chore: regenerate rpms.lock.yaml after base image update
+
+          Auto-regenerated RPM lockfile after Dockerfile.konflux base image update.
+          This ensures all transitive dependencies are properly resolved.
+
+          Triggered by: ${{ github.event_name }}
+          PR: ${PR_NUM}
+          Commit: ${{ github.sha }}"
+
+      - name: Push changes
+        if: steps.git_diff.outputs.changed == 'true'
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ github.event.inputs.pr_number }}" != "" ]; then
+            git push origin HEAD:${{ steps.pr_info.outputs.head_ref }}
+          else
+            git push origin ${{ github.ref_name }}
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on PR
+        if: |
+          steps.git_diff.outputs.changed == 'true' &&
+          (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number != ''))
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Determine PR number
+            let prNumber;
+            if ('${{ github.event_name }}' === 'pull_request') {
+              prNumber = ${{ github.event.pull_request.number }};
+            } else {
+              prNumber = '${{ github.event.inputs.pr_number }}';
+            }
+            
+            const isManual = '${{ github.event_name }}' === 'workflow_dispatch';
+            const commentBody = isManual 
+              ? '✅ **RPM Lockfile Regenerated (Manual Trigger)**\n\n' +
+                'The `rpms.lock.yaml` file has been manually regenerated.\n\n' +
+                '**Changes:**\n' +
+                '- Regenerated lockfile with updated dependencies\n' +
+                '- All architectures processed (x86_64, aarch64, ppc64le)\n' +
+                '- Transitive dependencies resolved\n\n' +
+                'Please review the changes before merging.'
+              : '✅ **RPM Lockfile Regenerated**\n\n' +
+                'The `rpms.lock.yaml` file has been automatically regenerated after the base image update in `Dockerfile.konflux`.\n\n' +
+                'This ensures all transitive dependencies are properly resolved and prevents build failures.\n\n' +
+                '**Changes:**\n' +
+                '- Regenerated lockfile with updated dependencies\n' +
+                '- All architectures processed (x86_64, aarch64, ppc64le)\n' +
+                '- Transitive dependencies resolved\n\n' +
+                'Please review the changes before merging.';
+            
+            github.rest.issues.createComment({
+              issue_number: parseInt(prNumber),
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            })
+
+      - name: Summary
+        if: steps.git_diff.outputs.changed == 'false'
+        run: |
+          echo "## ✅ No Changes Required" >> $GITHUB_STEP_SUMMARY
+          echo "The RPM lockfile is already up-to-date with the current base image." >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ github.event.inputs.pr_number }}" != "" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Tested on PR:** #${{ github.event.inputs.pr_number }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Summary with changes
+        if: steps.git_diff.outputs.changed == 'true'
+        run: |
+          echo "## ✅ RPM Lockfile Regenerated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "**Changes committed to:** \`${{ github.event.pull_request.head.ref }}\`" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ github.event.inputs.pr_number }}" != "" ]; then
+            echo "**Changes committed to:** \`${{ steps.pr_info.outputs.head_ref }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "**Tested on PR:** #${{ github.event.inputs.pr_number }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Changes committed to:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Summary:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Regenerated \`rpms.lock.yaml\` after base image update" >> $GITHUB_STEP_SUMMARY
+          echo "- All transitive dependencies resolved" >> $GITHUB_STEP_SUMMARY
+          echo "- All architectures processed" >> $GITHUB_STEP_SUMMARY
