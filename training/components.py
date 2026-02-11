@@ -269,6 +269,17 @@ def pytorch_job_launcher_op(
                 claim_name=output_pvc_name
             ),
         ),
+        models.V1Volume(
+            name="shm-volume",
+            empty_dir=models.V1EmptyDirVolumeSource(
+                medium="Memory",
+                size_limit="20Gi"
+            ),
+        ),
+        models.V1Volume(
+            name="shared-volume",
+            empty_dir=models.V1EmptyDirVolumeSource(),
+        ),
     ]
 
     # Set volume mounts
@@ -278,6 +289,8 @@ def pytorch_job_launcher_op(
         ),
         models.V1VolumeMount(mount_path="/input_model", name="model", read_only=True),
         models.V1VolumeMount(mount_path="/output", name="output"),
+        models.V1VolumeMount(mount_path="/dev/shm", name="shm-volume"),
+        models.V1VolumeMount(mount_path="/mnt/shared", name="shared-volume"),
     ]
 
     volume_mounts_worker = [
@@ -286,6 +299,8 @@ def pytorch_job_launcher_op(
         ),
         models.V1VolumeMount(mount_path="/input_model", name="model", read_only=True),
         models.V1VolumeMount(mount_path="/output", name="output", read_only=True),
+        models.V1VolumeMount(mount_path="/dev/shm", name="shm-volume"),
+        models.V1VolumeMount(mount_path="/mnt/shared", name="shared-volume"),
     ]
 
     # Set env variables
@@ -294,6 +309,9 @@ def pytorch_job_launcher_op(
         models.V1EnvVar(name="NPROC_PER_NODE", value=f"{nproc_per_node}"),
         models.V1EnvVar(name="XDG_CACHE_HOME", value="/tmp"),
         models.V1EnvVar(name="TRITON_CACHE_DIR", value="/tmp"),
+        models.V1EnvVar(name="TRITON_HOME", value="/tmp"),
+        models.V1EnvVar(name="TRITON_DUMP_DIR", value="/tmp"),
+        models.V1EnvVar(name="TRITON_OVERRIDE_DIR", value="/tmp"),
         models.V1EnvVar(name="HF_HOME", value="/tmp"),
         models.V1EnvVar(name="TRANSFORMERS_CACHE", value="/tmp"),
     ]
