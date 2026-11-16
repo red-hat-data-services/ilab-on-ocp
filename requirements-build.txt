@@ -44,7 +44,7 @@ hatchling==1.27.0
     #   pydantic
     #   typing-inspection
     #   urllib3
-maturin==1.8.4
+maturin==1.16.0
     # via pydantic-core
 mypy-extensions==1.1.0
     # via mypy
